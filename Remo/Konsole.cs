@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using static Remo.Global;
 
 namespace Remo
 {
@@ -55,36 +56,39 @@ namespace Remo
 
         public void Write(NewLine newline, Prefix prefix, object text, params object[] args)
         {
-            string newString = "";
-            
-            string oldString = (text == null) ? "" : text.ToString();
-
             if (VerboseMode)
             {
-                ToggleColor();
+                string newString = "";
+                string oldString = (text == null) ? "" : text.ToString();
 
+                ToggleColor();
+                 
                 if (ForcePrefix != Prefix.Auto)
                 {
                     prefix = ForcePrefix;
                 }
-
-                if (prefix == Prefix.Auto)
+                else
                 {
-                    prefix = LastPrefix;
+                    if (prefix == Prefix.Auto)
+                    {
+                        prefix = LastPrefix;
+                    }
+                    else
+                    {
+                        LastPrefix = prefix;
+                    }
                 }
-
-                LastPrefix = prefix;
 
                 if (prefix == Prefix.Prompt)
                 {
-                    if (LastWrite == KonsoleWrite.Newline || (newline == NewLine.Above || newline == NewLine.Both))
+                    if (LastWrite == KonsoleWrite.Newline || newline.Is(NewLine.Above, NewLine.Both))
                     {
                         newString = Prompt;
                     }
                 }
                 else if (prefix == Prefix.Indent)
                 {
-                    if (LastWrite == KonsoleWrite.Newline || (newline == NewLine.Above || newline == NewLine.Both))
+                    if (LastWrite == KonsoleWrite.Newline || newline.Is(NewLine.Above, NewLine.Both))
                     {
                         for (int i = 0; i < Prompt.Length; i++)
                         {
@@ -100,17 +104,17 @@ namespace Remo
 
                 newString += oldString;
 
-                if (newline == NewLine.Above || newline == NewLine.Both)
+                if (newline.Is(NewLine.Above, NewLine.Both))
                 {
                     newString = Environment.NewLine + newString;
                 }
 
-                if (newline == NewLine.Below || newline == NewLine.Both)
+                if (newline.Is(NewLine.Below, NewLine.Both))
                 {
                     newString += Environment.NewLine;
                 }
 
-                LastWrite = (newline == NewLine.Above || newline == NewLine.None) ? KonsoleWrite.Inline : KonsoleWrite.Newline;
+                LastWrite = newline.Is(NewLine.Above, NewLine.None) ? KonsoleWrite.Inline : KonsoleWrite.Newline;
                 
                 Console.Write(newString);
                 ToggleColor();
@@ -146,12 +150,14 @@ namespace Remo
             LastPrefix = formerPrefix;
         }
 
-        public void SetFormerColor()
+        // Konsole color methods
+
+        void SetFormerColor()
         {
             formerColor = Console.ForegroundColor;
         }
 
-        public void ToggleColor()
+        void ToggleColor()
         {
             if (!IgnoreColor)
             {
@@ -172,6 +178,16 @@ namespace Remo
             {
                 Console.ResetColor();
             }
+        }
+
+        static public bool ToggleVerboseMode()
+        {
+            return VerboseMode = !VerboseMode;
+        }
+
+        static public bool ToggleIgnoreColor()
+        {
+            return IgnoreColor = !IgnoreColor;
         }
     }
 }
