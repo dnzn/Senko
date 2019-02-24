@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 using static Remo.Global;
 
 namespace Remo
@@ -17,132 +18,202 @@ namespace Remo
         static public Prefix LastPrefix = Prefix.Prompt;
         static public KonsoleWrite LastWrite = KonsoleWrite.Newline;      
         static public string Prompt = "REMO> ";
-        static public ConsoleColor formerColor;
+        static public ConsoleColor FormerColor;
+        static public string Log;
+
+        public bool LogOnly = false;
 
         public ConsoleColor Color { get; set; }
+        public ConsoleColor PromptColor { get; set; }
+                
+        public Konsole(ConsoleColor color, ConsoleColor promptcolor, string prompt)
+        {
+            Init(color, promptcolor, prompt);
+        }
+
+        public Konsole(ConsoleColor color, ConsoleColor promptcolor)
+        {
+            Init(color, color);
+        }
 
         public Konsole(ConsoleColor color, string prompt)
         {
-            Console.CursorVisible = false;
-            Prompt = prompt;
-            Color = color;
-
-            SaveFormerColor();
+            Init(color, prompt);
         }
 
         public Konsole(ConsoleColor color)
         {
-            Console.CursorVisible = false;
-            Color = color;
-
-            SaveFormerColor();
+            Init(color, GetCurrentColor(), Prompt);
         }
 
         public Konsole(string prompt)
         {
-            Console.CursorVisible = false;
-            Prompt = prompt;
+            Init(prompt);
+        }
 
-            SaveFormerColor();
+        public Konsole(bool logonly)
+        {
+            Init(logonly);
         }
 
         public Konsole()
         {
+            Init();
+        }
+
+        void Init(ConsoleColor color, ConsoleColor promptcolor, string prompt)
+        {
+            Init(color, promptcolor);
+            Prompt = prompt;
+        }
+
+        void Init(ConsoleColor color, ConsoleColor promptcolor)
+        {
+            Init(color);
+            PromptColor = promptcolor;
+        }
+
+        void Init(ConsoleColor color, string prompt)
+        {
+            Init(color);
+            Prompt = prompt;
+        }
+
+        void Init(ConsoleColor color)
+        {
+            Init();
+            Color = color;
+        }
+
+        void Init(string prompt)
+        {
+            Init();
+            Prompt = prompt;
+        }
+
+        void Init(bool logonly)
+        {
+            if (logonly)
+            {
+                LogOnly = logonly;
+            }
+
+            Init();
+        }
+
+        void Init()
+        {
             Console.CursorVisible = false;
+            Console.ResetColor();
+            Color = GetCurrentColor();
+            PromptColor = GetCurrentColor();
+
             SaveFormerColor();
         }
 
         // Write methods and overrides
 
-        public void Write(NewLine newline, Prefix prefix, object text, params object[] args)
+        public void Write(ConsoleColor? tempcolor, NewLine newline, Prefix prefix, object obj, params object[] args)
         {
-            if (VerboseMode)
-            {
-                string newString = "";
-                string oldString = (text == null) ? "" : text.ToString();
+            DateTime datetime = DateTime.Now;
+            string datetimeString = datetime.ToString("MM/dd/yy HH:mm:ss | ");
 
-                ToggleColor();
-                 
-                if (ForcePrefix != Prefix.Auto)
+            string consoleString = "";
+            string oldString = (obj == null) ? "" : obj.ToString();
+
+            ToggleColor(tempcolor);
+
+            if (ForcePrefix != Prefix.Auto)
+            {
+                prefix = ForcePrefix;
+            }
+            else
+            {
+                if (prefix == Prefix.Auto)
                 {
-                    prefix = ForcePrefix;
+                    prefix = LastPrefix;
                 }
                 else
                 {
-                    if (prefix == Prefix.Auto)
-                    {
-                        prefix = LastPrefix;
-                    }
-                    else
-                    {
-                        LastPrefix = prefix;
-                    }
+                    LastPrefix = prefix;
                 }
-
-                if (prefix == Prefix.Prompt)
-                {
-                    if (LastWrite == KonsoleWrite.Newline || newline.Is(NewLine.Above, NewLine.Both))
-                    {
-                        newString = Prompt;
-                    }
-                }
-                else if (prefix == Prefix.Indent)
-                {
-                    if (LastWrite == KonsoleWrite.Newline || newline.Is(NewLine.Above, NewLine.Both))
-                    {
-                        for (int i = 0; i < Prompt.Length; i++)
-                        {
-                            newString += " ";
-                        }
-                    }
-                    else
-                    {
-                        newString = " ";
-                    }
-                }
-
-                for (int i = 0; i < args.Length; i++)
-                {
-                    oldString = oldString.Replace("{" + i + "}", args[i].ToString());
-                }
-
-                newString += oldString;
-
-                if (newline.Is(NewLine.Above, NewLine.Both))
-                {
-                    newString = Environment.NewLine + newString;
-                }
-
-                if (newline.Is(NewLine.Below, NewLine.Both))
-                {
-                    newString += Environment.NewLine;
-                }
-
-                LastWrite = newline.Is(NewLine.Above, NewLine.None) ? KonsoleWrite.Inline : KonsoleWrite.Newline;
-                
-                Console.Write(newString);
-                ToggleColor();
             }
+
+            if (prefix == Prefix.Prompt)
+            {
+                Log += Environment.NewLine + datetimeString;
+
+                if (VerboseMode && (LastWrite == KonsoleWrite.Newline || newline.Is(NewLine.Above, NewLine.Both)))
+                {
+
+                    ConsoleColor fcolor = FormerColor;
+                    Write(PromptColor, NewLine.None, Prefix.None, Prompt);
+                    FormerColor = fcolor;
+                }
+            }
+            else if (prefix == Prefix.Indent)
+            {
+                Log += Environment.NewLine + datetimeString;
+
+                if (LastWrite == KonsoleWrite.Newline || newline.Is(NewLine.Above, NewLine.Both))
+                {
+                    consoleString += new string(' ', Prompt.Length);
+                }
+                else
+                {
+                    consoleString = " ";
+                }
+            }
+
+            oldString = oldString.Replace(args);
+
+            consoleString += Regex.Replace(oldString, @"(\n|\r\n?)", Environment.NewLine + new string(' ', Prompt.Length));
+
+            if (newline.Is(NewLine.Above, NewLine.Both))
+            {
+                consoleString = Environment.NewLine + consoleString;
+            }
+
+            if (newline.Is(NewLine.Below, NewLine.Both))
+            {
+                consoleString += Environment.NewLine;
+            }
+
+            LastWrite = newline.Is(NewLine.Above, NewLine.None) ? KonsoleWrite.Inline : KonsoleWrite.Newline;
+
+            if (VerboseMode && !LogOnly)
+            {
+                Console.Write(consoleString);
+            }
+
+            ToggleColor(tempcolor);
+
+            Log += oldString != "REMO> " ? Regex.Replace(Regex.Replace(oldString, @"(\n|\r\n?)", " "), @"(\s{2,})", " ") : "";
         }
 
-        public void Write(Prefix prefix, object text, params object[] args)
+        public void Write(NewLine newline, Prefix prefix, object obj, params object[] args)
         {
-            Write(NewLine.None, prefix, text, args);
+            Write(null, newline, prefix, obj, args);
         }
 
-        public void Write(object text, params object[] args)
+        public void Write(Prefix prefix, object obj, params object[] args)
         {
-            Write(NewLine.None, Prefix.Auto, text, args);
-        }        
-
-        public void WriteLine(Prefix prefix, object text, params object[] args)
-        {
-            Write(NewLine.Below, prefix, text, args);
+            Write(NewLine.None, prefix, obj, args);
         }
 
-        public void WriteLine(object text, params object[] args)
+        public void Write(object obj, params object[] args)
         {
-            Write(NewLine.Below, Prefix.Auto, text, args);
+            Write(NewLine.None, Prefix.Auto, obj, args);
+        } 
+
+        public void WriteLine(Prefix prefix, object obj, params object[] args)
+        {
+            Write(NewLine.Below, prefix, obj, args);
+        }
+
+        public void WriteLine(object obj, params object[] args)
+        {
+            Write(NewLine.Below, Prefix.Auto, obj, args);
         }
 
         public void WriteLine()
@@ -154,27 +225,54 @@ namespace Remo
             LastPrefix = formerPrefix;
         }
 
+        public void ColorWrite(ConsoleColor tempcolor, Prefix prefix, object obj, params object[] args)
+        {
+            Write(tempcolor, NewLine.None, prefix, obj, args);
+        }
+
+        public void ColorWrite(ConsoleColor tempcolor, object obj, params object[] args)
+        {
+            Write(tempcolor, NewLine.None, Prefix.Auto, obj, args);
+        }
+
+        public void ColorWriteLine(ConsoleColor tempcolor, Prefix prefix, object obj, params object[] args)
+        {
+            Write(tempcolor, NewLine.Below, prefix, obj, args);
+        }
+
+        public void ColorWriteLine(ConsoleColor tempcolor, object obj, params object[] args)
+        {
+            Write(tempcolor, NewLine.Below, Prefix.Auto, obj, args);
+        }
+
         // Konsole color methods
+
+        ConsoleColor GetCurrentColor()
+        {
+            return Console.ForegroundColor;
+        }
 
         void SaveFormerColor()
         {
-            formerColor = Console.ForegroundColor;
+            FormerColor = GetCurrentColor();
         }
 
-        void ToggleColor()
+        void ToggleColor(ConsoleColor? color = null)
         {
             if (!IgnoreColor)
             {
-                if (Console.ForegroundColor != Color)
+                ConsoleColor setcolor = color ?? Color;
+
+                if (Console.ForegroundColor != setcolor)
                 {
                     SaveFormerColor();
-                    Console.ForegroundColor = Color;
+                    Console.ForegroundColor = setcolor;
                 }
                 else
                 {
-                    if (Color != formerColor)
+                    if (setcolor != FormerColor)
                     {
-                        Console.ForegroundColor = formerColor;
+                        Console.ForegroundColor = FormerColor;
                     }
                 }
             }

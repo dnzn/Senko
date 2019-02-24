@@ -7,26 +7,33 @@ namespace Remo
 {
     public static class Global
     {
-        public static readonly string[] Numbers = new string[]
+        public static readonly Dictionary<string, object> Numbers = new Dictionary<string, object>
         {
-            "zero", "one", "two", "three", "four",
-            "five", "six", "seven", "eight", "nine"
+            { "zero", 0 }, { "one", 1 },  { "two", 2 }, { "three", 3 }, { "four", 4 }, { "five", 5 }, { "six", 6 }, { "seven", 7 }, { "eight", 8 }, { "nine", 9 }
         };
 
-        public static readonly string[][] Homophones = new string[][]
+        public static readonly Dictionary<string, object> Homophones = new Dictionary<string, object>
         {
-            new string[] { "zero" },
-            new string[] { "one", "won" },
-            new string[] { "two", "to", "too" },
-            new string[] { "three", "tree" },
-            new string[] { "four", "for" },
-            new string[] { "five" },
-            new string[] { "six"},
-            new string[] { "seven"},
-            new string[] { "eight", "ate"},
-            new string[] { "nine"}
+            { "won", 1 }, { "to", 2 }, { "too", 2 }, { "tree", 3 }, { "for", 4 }, { "ate", 8 },
         };
 
+        public static readonly Dictionary<char, char> Encapsulators = new Dictionary<char, char>
+        {
+            { '(', ')' },
+            { '[', ']' },
+            { '{', '}' },
+            { '<', '>' }
+        };
+
+        
+
+        /// <summary>
+        /// Compare an object with any number of other objects and check if they are equal.
+        /// </summary>
+        /// <typeparam name="T">Any generic type</typeparam>
+        /// <param name="obj">The main object to compare</param>
+        /// <param name="args">Other objects to compare with the main object</param>
+        /// <returns></returns>
         public static bool Is<T>(this T obj, params T[] args)
         {
             foreach (object item in args) { if (item.Equals(obj)) { return true; } } return false;
@@ -36,26 +43,141 @@ namespace Remo
         /// Remove whitespaces, convert text to lower case, and convert numerical words to numbers.
         /// </summary>
         /// <param name="text">The string to be modified.</param>
+        /// <param name="processHomophones">Set true to process homophones</param>
         /// <returns></returns>
-        public static string Standardize(this string text)
+        public static string Standardize(this string text, bool processHomophones = false)
         {
-            for (int i = 0; i < Numbers.Length; i++)
+            text = text.ToLower();
+            string pattern = @"(\s{0}|{0}\s|\s{0}\s)";
+
+            string[] words = text.Split(' ');
+
+            text = text.Replace(pattern, Numbers);
+
+            if (processHomophones)
             {
-                text = Regex.Replace(text, Numbers[i], i.ToString());
+                text = text.Replace(pattern, Homophones);
             }
 
-            return Regex.Replace(text, @"\s+", "").ToLower();
+            return Regex.Replace(text, @"\s+", "");
         }
 
         /// <summary>
-        /// Compares two strings to determine whether they are synonymous or equal in context.
+        /// Compares two, possibly different, strings to determine whether they are synonymous or equal in context.
         /// </summary>
         /// <param name="s1">The first string</param>
         /// <param name="s2">The second string</param>
         /// <returns></returns>
-        public static bool IsSynonym(this string s1, string s2)
+        public static bool IsSynonym(this string s1, string s2, bool processHomophones = false)
         {
-            return s1.Standardize() == s2.Standardize() ? true : false;
+            return s1.Standardize(processHomophones) == s2.Standardize() ? true : false;
+        }
+
+        public static string Replace(this string text, params object[] args)
+        {
+            for (int i = 0; i < args.Length; i++)
+            {
+                text = Regex.Replace(text, i.Encapsulate(@"(\{"), args[i].ToString());
+            }
+
+            return text;
+        }
+
+        public static string Replace(this string text, string pattern, Dictionary<string, object> dictionary)
+        {
+            string[] words = text.Split(' ');
+
+            foreach (string word in words)
+            {
+                if (dictionary.ContainsKey(word))
+                {
+                    text = Regex.Replace(text, pattern.Replace(word), dictionary[word].ToString());
+                }
+            }
+
+            return text;
+        }
+
+        /// <summary>
+        /// Encapsulates a string or object in a Regex pattern safe manner.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="capsule"></param>
+        /// <returns></returns>
+        public static string Encapsulate(this object obj, object opening)
+        {
+            string text = obj.ToString();
+            string closing = "";
+
+            if (Regex.IsMatch(opening.ToString(), @"(\\[\\n\^\.\[\$\(\)\|\*\+\?\{\\])"))
+            {
+                bool checknext = false;
+
+                foreach (char c in opening.ToString())
+                {
+                    if (!checknext)
+                    {
+                        if (c == '\\')
+                        {
+                            checknext = true;
+                        }
+                        else
+                        {
+                            if (Encapsulators.ContainsKey(c))
+                            {
+                                closing = Encapsulators[c] + closing;
+                            }
+                            else
+                            {
+                                closing = c + closing;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (Regex.IsMatch(c.ToString(), @"[\\n\^\.\[\$\(\)\|\*\+\?\{\\]"))
+                        {
+                            if (Encapsulators.ContainsKey(c))
+                            {
+                                closing = @"\" + Encapsulators[c] + closing;
+                            }
+                            else
+                            {
+                                closing = @"\" + c + closing;
+                            }
+                        }
+                        else
+                        {
+                            if (Encapsulators.ContainsKey(c))
+                            {
+                                closing = Encapsulators[c] + @"\" + closing;
+                            }
+                            else
+                            {
+                                closing = c + @"\" + closing;
+                            }
+                        }
+
+                        checknext = false;
+                    }
+                }
+            }
+            else
+            {
+                foreach (char c in opening.ToString())
+                {
+                    if (Encapsulators.ContainsKey(c))
+                    {
+                        closing = Encapsulators[c] + closing;
+                    }
+                    else
+                    {
+                        closing = c + closing;
+                    }
+                }
+            }
+
+            return opening + text + closing;
         }
     }
 }
