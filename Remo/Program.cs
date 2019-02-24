@@ -9,14 +9,18 @@ namespace Remo
         {
             Konsole Kon = new Konsole(ConsoleColor.Green);
 
-            ForcePrefix = Prefix.Prompt;
-            ResetForcePrefix();
-            Kon.Write(NewLine.None, Prefix.Auto, "This text does not contain a newline.");
-            Kon.Color = ConsoleColor.Gray;
-            Kon.WriteLine(Prefix.Indent, "So this must have no prompt.");
-            Kon.WriteLine();
-            Kon.Color = ConsoleColor.Yellow;
-            Kon.WriteLine(Prefix.Indent, "Another test.");
+            string s1 = "video 3";
+            string s2 = "Video3";
+
+            if (s1.IsSynonym(s2))
+            {
+                Kon.WriteLine("Yes, {0} is synonymous with {1}", s1, s2);
+            }
+            else
+            {
+                Kon.WriteLine("No, {0} is not synonymous with {1}", s1, s2);
+            }
+            
             Console.ReadLine();
         }
     }
