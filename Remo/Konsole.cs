@@ -15,10 +15,10 @@ namespace Remo
         static public bool IgnoreColor = false;
         static public Prefix ForcePrefix = Prefix.Auto;
         static public Prefix LastPrefix = Prefix.Prompt;
-        static public KonsoleWrite LastWrite = KonsoleWrite.Newline;
-      
+        static public KonsoleWrite LastWrite = KonsoleWrite.Newline;      
         static public string Prompt = "REMO> ";
         static public ConsoleColor formerColor;
+
         public ConsoleColor Color { get; set; }
 
         public Konsole(ConsoleColor color, string prompt)
@@ -27,7 +27,7 @@ namespace Remo
             Prompt = prompt;
             Color = color;
 
-            SetFormerColor();
+            SaveFormerColor();
         }
 
         public Konsole(ConsoleColor color)
@@ -35,7 +35,7 @@ namespace Remo
             Console.CursorVisible = false;
             Color = color;
 
-            SetFormerColor();
+            SaveFormerColor();
         }
 
         public Konsole(string prompt)
@@ -43,13 +43,13 @@ namespace Remo
             Console.CursorVisible = false;
             Prompt = prompt;
 
-            SetFormerColor();
+            SaveFormerColor();
         }
 
         public Konsole()
         {
             Console.CursorVisible = false;
-            SetFormerColor();
+            SaveFormerColor();
         }
 
         // Write methods and overrides
@@ -94,6 +94,10 @@ namespace Remo
                         {
                             newString += " ";
                         }
+                    }
+                    else
+                    {
+                        newString = " ";
                     }
                 }
 
@@ -152,7 +156,7 @@ namespace Remo
 
         // Konsole color methods
 
-        void SetFormerColor()
+        void SaveFormerColor()
         {
             formerColor = Console.ForegroundColor;
         }
@@ -163,7 +167,7 @@ namespace Remo
             {
                 if (Console.ForegroundColor != Color)
                 {
-                    SetFormerColor();
+                    SaveFormerColor();
                     Console.ForegroundColor = Color;
                 }
                 else
@@ -188,6 +192,11 @@ namespace Remo
         static public bool ToggleIgnoreColor()
         {
             return IgnoreColor = !IgnoreColor;
+        }
+
+        static public void ResetForcePrefix()
+        {
+            ForcePrefix = Prefix.Auto;
         }
     }
 }

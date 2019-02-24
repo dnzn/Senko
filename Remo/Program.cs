@@ -9,9 +9,11 @@ namespace Remo
         {
             Konsole Kon = new Konsole(ConsoleColor.Green);
 
-            Kon.Write(NewLine.None, Prefix.Auto, "This text does not contain a newline. ");
+            ForcePrefix = Prefix.Prompt;
+            ResetForcePrefix();
+            Kon.Write(NewLine.None, Prefix.Auto, "This text does not contain a newline.");
             Kon.Color = ConsoleColor.Gray;
-            Kon.WriteLine("So this must have no prompt.");
+            Kon.WriteLine(Prefix.Indent, "So this must have no prompt.");
             Kon.WriteLine();
             Kon.Color = ConsoleColor.Yellow;
             Kon.WriteLine(Prefix.Indent, "Another test.");
