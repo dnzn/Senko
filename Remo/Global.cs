@@ -10,12 +10,30 @@ namespace Remo
     {
         public static readonly Dictionary<string, int> Numbers = new Dictionary<string, int>
         {
-            { "zero", 0 }, { "one", 1 },  { "two", 2 }, { "three", 3 }, { "four", 4 }, { "five", 5 }, { "six", 6 }, { "seven", 7 }, { "eight", 8 }, { "nine", 9 }
+            { "zero", 0 },
+            { "one", 1 },
+            { "two", 2 },
+            { "three", 3 },
+            { "four", 4 },
+            { "five", 5 },
+            { "six", 6 },
+            { "seven", 7 },
+            { "eight", 8 },
+            { "nine", 9 }
         };
 
+        /// <summary>
+        /// This one was created for the Google Assistant and IFTTT integration.
+        /// Sometimes, text-to-speech just doesn't work well so this will help catch possible mistakes.
+        /// </summary>
         public static readonly Dictionary<string, object> Homophones = new Dictionary<string, object>
         {
-            { "won", 1 }, { "to", 2 }, { "too", 2 }, { "tree", 3 }, { "for", 4 }, { "ate", 8 },
+            { "won", 1 },
+            { "to", 2 },
+            { "too", 2 },
+            { "tree", 3 },
+            { "for", 4 },
+            { "ate", 8 },
         };
 
         public static readonly Dictionary<char, char> Encapsulators = new Dictionary<char, char>
@@ -29,10 +47,10 @@ namespace Remo
         /// <summary>
         /// Compare an object with any number of other objects and check if they are equal.
         /// </summary>
-        /// <typeparam name="T">Any generic type</typeparam>
+        /// <typeparam name="T">Any type that can be compared</typeparam>
         /// <param name="obj">The main object to compare</param>
         /// <param name="args">Other objects to compare with the main object</param>
-        /// <returns></returns>
+        /// <returns>True if obj is equal to any of the args</returns>
         public static bool Is<T>(this T obj, params T[] args)
         {
             foreach (object item in args) { if (item.Equals(obj)) { return true; } } return false;
@@ -46,10 +64,8 @@ namespace Remo
         /// <returns></returns>
         public static string Standardize(this string text, bool processHomophones = false)
         {
-            text = text.ToLower();
-            string pattern = @"(\s{0}|{0}\s|\s{0}\s)";
-
-            string[] words = text.Split(' ');
+            text = text.ToLower(); // Convert string to lower case
+            string pattern = @"(\s{0}|{0}\s|\s{0}\s)"; // The pattern to use to Translate()
 
             text = text.Translate(pattern, Numbers);
 
@@ -82,6 +98,14 @@ namespace Remo
             return text;
         }
 
+        /// <summary>
+        /// Translates the input text to an entry in the dictionary if found. This uses Regex to do the replacements.
+        /// </summary>
+        /// <typeparam name="T">This should work with any type that can be converted into a string</typeparam>
+        /// <param name="text">The text to translate</param>
+        /// <param name="pattern">The Regex patterm to use</param>
+        /// <param name="dictionary">The dictionary to use</param>
+        /// <returns>The translated text. If no translations are available, it will return the original.</returns>
         public static string Translate<T>(this string text, string pattern, Dictionary<string, T> dictionary)
         {
             string[] words = text.Split(' ');
