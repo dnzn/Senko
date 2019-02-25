@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace Remo
 {
     public static class Global
     {
-        public static readonly Dictionary<string, object> Numbers = new Dictionary<string, object>
+        public static readonly Dictionary<string, int> Numbers = new Dictionary<string, int>
         {
             { "zero", 0 }, { "one", 1 },  { "two", 2 }, { "three", 3 }, { "four", 4 }, { "five", 5 }, { "six", 6 }, { "seven", 7 }, { "eight", 8 }, { "nine", 9 }
         };
@@ -24,9 +25,7 @@ namespace Remo
             { '{', '}' },
             { '<', '>' }
         };
-
         
-
         /// <summary>
         /// Compare an object with any number of other objects and check if they are equal.
         /// </summary>
@@ -52,11 +51,11 @@ namespace Remo
 
             string[] words = text.Split(' ');
 
-            text = text.Replace(pattern, Numbers);
+            text = text.Translate(pattern, Numbers);
 
             if (processHomophones)
             {
-                text = text.Replace(pattern, Homophones);
+                text = text.Translate(pattern, Homophones);
             }
 
             return Regex.Replace(text, @"\s+", "");
@@ -83,7 +82,7 @@ namespace Remo
             return text;
         }
 
-        public static string Replace(this string text, string pattern, Dictionary<string, object> dictionary)
+        public static string Translate<T>(this string text, string pattern, Dictionary<string, T> dictionary)
         {
             string[] words = text.Split(' ');
 
