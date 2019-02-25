@@ -98,9 +98,10 @@ namespace Remo
         }
 
         /// <summary>
-        /// Encapsulates a string or object in a Regex pattern safe manner.
+        /// Encapsulates a string or object in a Regex-pattern-safe manner. The proper parentheses and other brackets are automagically parsed from the capsule.
+        /// For example to get this regex pattern (\{[abc]\}), the capsule must only contain @"(\{[" and the method will do the rest.
         /// </summary>
-        /// <param name="obj"></param>
+        /// <param name="obj">The object to encapsulate</param>
         /// <param name="capsule"></param>
         /// <returns></returns>
         public static string Encapsulate(this object obj, object opening)
