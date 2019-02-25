@@ -33,6 +33,6 @@ I decided to not share the original code as it is a mess (though it works). It's
 ## Future plans
 - Implement a config (*.konfig!) file system to store device information on so that the app will autoconfigure itself everytime it starts.
 - Twitter integration will be nice. Might even be faster than a synced file which can sometimes be delayed when the filesystem is busy.
-- Implement a REST/Webhooks server so I can control it with another app remotely with other devices in the local network, maybe even beyond.
+- Implement a REST/Webhooks server so I can control it remotely with other devices in the local network, maybe even beyond.
 - Maybe whip up a separate app that would let me control my PC as well.
 - Some other stuff from the future that I have not thought about yet...
