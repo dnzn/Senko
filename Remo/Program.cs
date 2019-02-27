@@ -19,6 +19,10 @@ namespace Remo
 
             SonyDevice.Device dev = new SonyDevice.Device(@"C:\Users\Danzen Binos\OneDrive\remo\hub.deviceinfo.json");
 
+            string text = File.ReadAllText(@"C:\Users\Danzen Binos\OneDrive\remo\hub.ircodelist.json");
+
+            JSON json = new JSON(text);
+
             Kon.WriteLine(dev.Product);
             Kon.WriteLine(dev.Region);
             Kon.WriteLine(dev.Language);

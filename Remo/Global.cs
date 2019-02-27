@@ -32,7 +32,7 @@ namespace Remo
         /// This one was created for the Google Assistant and IFTTT integration.
         /// Sometimes, text-to-speech just doesn't work well so this will help catch possible mistakes.
         /// </summary>
-        public static readonly Dictionary<string, object> Homophones = new Dictionary<string, object>
+        public static Dictionary<string, object> Homophones = new Dictionary<string, object>
         {
             { "won", 1 },
             { "to", 2 },
@@ -51,17 +51,18 @@ namespace Remo
         };
 
         /// <summary>
-        /// A JSON class that I whipped on my own
-        /// It takes a string and gets all key-value pairs and set them on a dictionary (Lexicon) for easy searching
+        /// A JSON class that I whipped on my own but it will only work for JSON results from Sony devices
+        /// It takes a string and gets all key-value pairs and set them into a list of dictionaries for easy searching
+        /// I will be extending this later to support more functions depending on needs
         /// </summary>
         public class JSON
         {
             public string Raw { get; private set; }
-            public Dictionary<string, string> Lexicon { get; private set; }
-            
+            public List<Dictionary<string, string>> Lexicon { get; private set; }
+                        
             public JSON(string json)
             {
-                Lexicon = new Dictionary<string, string>();
+                Lexicon = new List<Dictionary<string, string>>();
                 Raw = json;
 
                 Parse(Raw);
@@ -69,16 +70,31 @@ namespace Remo
 
             void Parse(string json)
             {
-                foreach (Match matches in Regex.Matches(json, "(\"\\w+\"\\s*:\\s*(\"([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})\"|\"[0-9A-Za-z-./:+@_\\s]+\"|\\d+))"))
-                {
-                    string[] KeyValue = matches.Value.Split(':');
+                json = Regex.Replace(Regex.Match(json, "(\"result\":\\[.+\\])").Value, "(\"result\":\\[)|(\\])", "");//.Replace("},{", "}" + Environment.NewLine + "{");
+                
+                string[] results = Regex.Split(json, "\\}\\s*,\\s*\\{");
 
-                    for (int i = 0; i < KeyValue.Length; i++)
+                for (int i = 0; i < results.Length; i++)
+                {
+                    results[i] = results[i].Trim('{').Trim('}').Replace(@"\/", "/");
+
+                    Dictionary<string, string> entry = new Dictionary<string, string>();
+
+                    foreach (Match matches in Regex.Matches(results[i], "(\"\\w+\"\\s*:\\s*(\"([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})\"|\"[0-9A-Za-z-.\\/:+@_=\\s]+\"|\\d+))"))
                     {
-                        KeyValue[i] = KeyValue[i].Trim().Trim('\"');
+                        string[] KeyValue = Regex.Split(matches.Value, "\"\\s*:\\s*\"");
+
+                        for (int j = 0; j < KeyValue.Length; j++)
+                        {
+                            KeyValue[j] = KeyValue[j].Trim().Trim('\"');
+                        }
+
+                        Kon.WriteLine(KeyValue[0] + " : " + KeyValue[1]);                       
+
+                        entry.Add(KeyValue[0], KeyValue[1]);
                     }
-                    
-                    Lexicon.Add(KeyValue[0], KeyValue[1]);                    
+
+                    Lexicon.Add(entry);
                 }
             }
         }
@@ -147,9 +163,9 @@ namespace Remo
         //
         public static string Format(this string text, params object[] args)
         {
-            if (text != null)
+            for (int i = 0; i < args.Length; i++)
             {
-                text = string.Format(text, args);
+                text = Regex.Replace(text, i.Encapsulate(@"(\{"), args[i].ToString());
             }
 
             return text;

@@ -9,10 +9,10 @@ using System.Reflection;
 
 namespace Remo
 {
-    public class SonyDevice
+    public partial class SonyDevice
     {
         public string Name { get; private set; }
-        public string FilePath { get; set; }
+        public string DefaultFilePath { get; set; }
 
         public class Device
         {
@@ -27,7 +27,7 @@ namespace Remo
             public string Area { get; private set; }
             public string CID { get; private set; }
 
-            Dictionary<string, string> keys = new Dictionary<string, string>()
+            Dictionary<string, string> _keys = new Dictionary<string, string>()
             {
                 { "product", "Product" },
                 { "region", "Region" },
@@ -51,23 +51,26 @@ namespace Remo
                 }
             }
 
-            void Parse(string json)
+            void Parse(string file)
             {
-                JSON parser = new JSON(json);
+                JSON json = new JSON(file);
 
-                foreach (KeyValuePair<string, string> k in keys)
+                foreach (KeyValuePair<string, string> k in _keys)
                 {
-                    if (parser.Lexicon.ContainsKey(k.Key))
+                    foreach(Dictionary<string, string> lexicon in json.Lexicon)
                     {
-                        typeof(Device).GetProperty(k.Value).SetValue(this, parser.Lexicon[k.Key]);
-                    }
+                        if (lexicon.ContainsKey(k.Key))
+                        {
+                            typeof(Device).GetProperty(k.Value).SetValue(this, lexicon[k.Key]);
+                        }
+                    }                    
                 }
             }
         }
 
         class Alias
         {
-            Dictionary<string, string> Lexicon { get; set; }
+            public Dictionary<string, string> Lexicon { get; set; }
             
             public Alias(string file)
             {
@@ -82,7 +85,7 @@ namespace Remo
 
                         foreach (string alias in set[1].Split(','))
                         {
-                            Lexicon.Add(alias, name);
+                            Lexicon.Add(alias.Standardize(), name.Standardize());
                         }
                     }
 
@@ -92,6 +95,11 @@ namespace Remo
                 {
                     Kon.WriteLine(Prefix.Indent, "File does not exist. Aborting...");
                 }
+            }
+
+            public bool ContainsKey(string key)
+            {
+                return Lexicon.ContainsKey(key);
             }
         }
     }
