@@ -4,31 +4,22 @@ using System.Text;
 using System.Text.RegularExpressions;
 using static Remo.Global;
 
+using System.IO;
+
 namespace Remo
 {
     public class Konsole
     {
-        //public enum KonsoleWrite { Inline, Newline }
-
-        //static public bool VerboseMode = true;
-        //static public bool IgnoreColor = false;
-        //static public Prefix ForcePrefix = Prefix.Auto;
-        //static public Prefix LastPrefix = Prefix.Prompt;
-        //static public KonsoleWrite LastWrite = KonsoleWrite.Newline;      
-        //static public string Prompt = "REMO> ";
-        //static public ConsoleColor FormerColor;
-        //static public string GlobalLog;
-
         public enum Prefix { None, Prompt, Indent, Auto }
         public enum NewLine { None, Before, After, Both }
         public enum Color { Primary, Secondary }
 
         // STATIC VARIABLES
-        static public string KonsoleLog;
+        static public string Log;
         static public bool VerboseMode = true;
         static public bool IgnoreColor = false;
         static public Prefix ForcePrefix = Prefix.Auto;
-        static public Prefix? StaticLastPrefix = null;
+        static public Prefix? LastPrefix = null;
         static public ConsoleColor? ForceColor = null;
         static public string Prompt = "KON> ";
         public static int Operations = 0;
@@ -36,40 +27,74 @@ namespace Remo
         public ConsoleColor PrimaryColor { get; set; }
         public ConsoleColor SecondaryColor { get; set; }
         public ConsoleColor PromptColor { get; set; }
-        public string Log { get; private set; }
+       
         public bool LogOnly { get; set; }
         public Color CurrentColor { get; set; }
-        public Prefix LastPrefix { get; private set; }
-        public ConsoleColor LastColor { get; private set; }
+
+        public string InstanceLog { get; private set; }
+
+        Prefix lastPrefix { get; set; }
+        ConsoleColor lastColor { get; set; }
 
         public Konsole()
         {
-            LastPrefix = Prefix.Prompt;
+            lastPrefix = Prefix.Prompt;
             PrimaryColor = Console.ForegroundColor;
             SecondaryColor = Console.ForegroundColor;
             PromptColor = Console.ForegroundColor;
+            Console.CursorVisible = false;
+            InstanceLog = "";
+            Log = "";
+        }
+
+        public int Read()
+        {
+            WritePrompt();
+            Console.CursorVisible = true;
+            int read = Console.Read();
+            Console.CursorVisible = false;
+            return read;
+        }
+
+        public string ReadLine()
+        {
+            Operations++;
+            string log = DateTime.Now.ToString(Operations.ToString("D4").Encapsulate("[") + " MM/dd/yy HH:mm:ss < ");
+
+            //if (InstanceLog != "" || InstanceLog != null)
+            //{
+            //    log = Environment.NewLine + log;
+            //}
+            WritePrompt();
+            Console.CursorVisible = true;
+            string read = Console.ReadLine();
+            Console.CursorVisible = false;
+
+            log += read;
+            InstanceLog += InstanceLog.Is("", null) ? log : Environment.NewLine + log;
+            Log += Log.Is("", null) ? log : Environment.NewLine + log;
+
+            return read;
         }
 
         public void Write(bool primitive, ConsoleColor? color, NewLine newline, Prefix prefix, string text, params object[] args)
         {
-            LastColor = Console.ForegroundColor;
+            lastColor = Console.ForegroundColor;
             string console = "";
             string log = "";
             string nl = "";
+            bool disableLog = false;
 
-            if (color == null) { color = (CurrentColor == Color.Primary) ? PrimaryColor : SecondaryColor;  }
-
-            if (!IgnoreColor)
+            if (text.Is(Log, InstanceLog, ""))
             {
-                if (ForceColor != null) { color =  ForceColor; }
-
-                Console.ForegroundColor = (ConsoleColor)color;
+                disableLog = true;
             }
 
             if (!primitive)
             {
                 Operations++;
-                log = DateTime.Now.ToString(Operations.ToString("D4").Encapsulate("[") + " MM/dd/yy HH:mm:ss | ");
+
+                log = DateTime.Now.ToString(Operations.ToString("D4").Encapsulate("[") + " MM/dd/yy HH:mm:ss > ");
 
                 if (ForcePrefix != Prefix.Auto)
                 {
@@ -79,11 +104,11 @@ namespace Remo
                 {
                     if (prefix == Prefix.Auto)
                     {
-                        prefix = LastPrefix;
+                        prefix = lastPrefix;
                     }
 
+                    lastPrefix = prefix;
                     LastPrefix = prefix;
-                    StaticLastPrefix = prefix;
                 }
 
                 if (newline.Is(NewLine.Before, NewLine.Both))
@@ -102,7 +127,10 @@ namespace Remo
                 }
                 else
                 {
-                    text = Regex.Replace(text, @"(\n|\r\n?)", Environment.NewLine + new string(' ', Prompt.Length));
+                    if (text != null)
+                    {
+                        text = Regex.Replace(text, @"(\n|\r\n?)", Environment.NewLine + new string(' ', Prompt.Length), RegexOptions.Multiline);
+                    }
                 }
 
                 if (prefix == Prefix.Prompt)
@@ -122,14 +150,38 @@ namespace Remo
                 }
             }
 
-            text = text.Replace(args);
+            if (color == null)
+            {
+                color = (CurrentColor == Color.Primary) ? PrimaryColor : SecondaryColor;
+            }
+            else
+            {
+                if (color == PrimaryColor)
+                {
+                    CurrentColor = Color.Primary;
+                }
+                else
+                {
+                    SecondaryColor = (ConsoleColor)color;
+                }
+            }
+
+            if (!IgnoreColor)
+            {
+                if (ForceColor != null) { color = ForceColor; }
+
+                Console.ForegroundColor = (ConsoleColor)color;
+            }
+
+            text = text.Format(args);
             console += text;
 
-            if (!primitive)
+            if (!primitive && !disableLog)
             {
-                log += Regex.Replace(text, @"(\s{2,})", " ") + Environment.NewLine; ;
-                Log += log;
-                KonsoleLog += log;
+                log += text; //Regex.Replace(text, @"(\s{2,})", " ", RegexOptions.Multiline);
+                
+                InstanceLog += InstanceLog.Is("", null) ? log : Environment.NewLine + log;
+                Log += Log.Is("", null) ? log : Environment.NewLine + log;
             }
 
             if (newline.Is(NewLine.After, NewLine.Both))
@@ -142,38 +194,21 @@ namespace Remo
                 Console.Write(console);
             }
 
-            if (LastColor != Console.ForegroundColor)
+            if (lastColor != Console.ForegroundColor)
             {
-                Console.ForegroundColor = LastColor;
-
+                Console.ForegroundColor = lastColor;
             }
+
+            Console.ResetColor();
         }
 
-        // Konsole.Write Overrides
+        // The overrides below where created with the help of my CreateOverrideArgumentList() method
+
+        #region Konsole.Write overrides
 
         public void Write(bool primitive, ConsoleColor? color, NewLine newline, string text, params object[] args)
         {
             Write(primitive, color, newline, Prefix.Auto, text, args);
-        }
-
-        public void Write(bool primitive, ConsoleColor? color, string text, params object[] args)
-        {
-            Write(primitive, color, NewLine.None, text, args);
-        }
-
-        public void Write(ConsoleColor? color, NewLine newline, string text, params object[] args)
-        {
-            Write(false, color, newline, text, args);
-        }
-
-        public void Write(bool primitive, NewLine newline, string text, params object[] args)
-        {
-            Write(primitive, null, newline, Prefix.Auto, text, args);
-        }
-
-        public void Write(NewLine newline, string text, params object[] args)
-        {
-            Write(false, newline, text, args);
         }
 
         public void Write(bool primitive, ConsoleColor? color, Prefix prefix, string text, params object[] args)
@@ -181,24 +216,24 @@ namespace Remo
             Write(primitive, color, NewLine.None, prefix, text, args);
         }
 
-        public void Write(ConsoleColor? color, Prefix prefix, string text, params object[] args)
-        {
-            Write(false, color, prefix, text, args);
-        }
-
-        public void Write(ConsoleColor? color, string text, params object[] args)
-        {
-            Write(color, Prefix.Auto, text, args);
-        }
-
         public void Write(bool primitive, NewLine newline, Prefix prefix, string text, params object[] args)
         {
             Write(primitive, null, newline, prefix, text, args);
         }
 
+        public void Write(bool primitive, NewLine newline, string text, params object[] args)
+        {
+            Write(primitive, null, newline, text, args);
+        }
+
         public void Write(bool primitive, Prefix prefix, string text, params object[] args)
         {
             Write(primitive, NewLine.None, prefix, text, args);
+        }
+
+        public void Write(bool primitive, ConsoleColor? color, string text, params object[] args)
+        {
+            Write(primitive, color, Prefix.Auto, text, args);
         }
 
         public void Write(bool primitive, string text, params object[] args)
@@ -211,9 +246,29 @@ namespace Remo
             Write(false, color, newline, prefix, text, args);
         }
 
+        public void Write(ConsoleColor? color, NewLine newline, string text, params object[] args)
+        {
+            Write(color, newline, Prefix.Auto, text, args);
+        }
+
+        public void Write(ConsoleColor? color, Prefix prefix, string text, params object[] args)
+        {
+            Write(color, NewLine.None, prefix, text, args);
+        }
+
+        public void Write(ConsoleColor? color, string text, params object[] args)
+        {
+            Write(color, Prefix.Auto, text, args);
+        }
+
         public void Write(NewLine newline, Prefix prefix, string text, params object[] args)
         {
-            Write(null, newline, prefix, text, args);
+            Write(false, null, newline, prefix, text, args);
+        }
+
+        public void Write(NewLine newline, string text, params object[] args)
+        {
+            Write(newline, Prefix.Auto, text, args);
         }
 
         public void Write(Prefix prefix, string text, params object[] args)
@@ -226,9 +281,16 @@ namespace Remo
             Write(Prefix.Auto, text, args);
         }
 
-        // Konsole.WriteLine()
+        public void WritePrompt()
+        {
+            Write(Prefix.Prompt, "");
+        }
 
-        public void WriteLine(ConsoleColor? color, NewLine newline, Prefix prefix, string text, params object[] args)
+        #endregion
+
+        #region Konsole.WriteLine methods and overrides
+
+        public void WriteLine(bool primitive, ConsoleColor? color, NewLine newline, Prefix prefix, string text, params object[] args)
         {
             switch (newline)
             {
@@ -242,22 +304,72 @@ namespace Remo
                     break;
             }
 
-            Write(color, newline, prefix, text, args);
+            Write(primitive, color, newline, prefix, text, args);
+        }
+
+        public void WriteLine(bool primitive, ConsoleColor? color, NewLine newline, string text, params object[] args)
+        {
+            WriteLine(primitive, color, newline, Prefix.Auto, text, args);
+        }
+
+        public void WriteLine(bool primitive, ConsoleColor? color, Prefix prefix, string text, params object[] args)
+        {
+            WriteLine(primitive, color, NewLine.After, prefix, text, args);
+        }
+
+        public void WriteLine(bool primitive, NewLine newline, Prefix prefix, string text, params object[] args)
+        {
+            WriteLine(primitive, null, newline, prefix, text, args);
+        }
+
+        public void WriteLine(bool primitive, NewLine newline, string text, params object[] args)
+        {
+            WriteLine(primitive, null, newline, text, args);
+        }
+
+        public void WriteLine(bool primitive, Prefix prefix, string text, params object[] args)
+        {
+            WriteLine(primitive, NewLine.After, prefix, text, args);
+        }
+
+        public void WriteLine(bool primitive, ConsoleColor? color, string text, params object[] args)
+        {
+            WriteLine(primitive, color, Prefix.Auto, text, args);
+        }
+
+        public void WriteLine(bool primitive, string text, params object[] args)
+        {
+            WriteLine(primitive, Prefix.Auto, text, args);
+        }
+
+        public void WriteLine(ConsoleColor? color, NewLine newline, Prefix prefix, string text, params object[] args)
+        {
+            WriteLine(false, color, newline, prefix, text, args);
         }
 
         public void WriteLine(ConsoleColor? color, NewLine newline, string text, params object[] args)
         {
-            WriteLine(color, newline, text, Prefix.Auto, args);
+            WriteLine(color, newline, Prefix.Auto, text, args);
         }
-        
-        public void WriteLine(NewLine newline, string text, params object[] args)
+
+        public void WriteLine(ConsoleColor? color, Prefix prefix, string text, params object[] args)
         {
-            WriteLine(null, newline, text, args);
+            WriteLine(color, NewLine.After, prefix, text, args);
+        }
+
+        public void WriteLine(ConsoleColor? color, string text, params object[] args)
+        {
+            WriteLine(color, Prefix.Auto, text, args);
         }
 
         public void WriteLine(NewLine newline, Prefix prefix, string text, params object[] args)
         {
-            WriteLine(null, newline, prefix, text, args);
+            WriteLine(false, null, newline, prefix, text, args);
+        }
+
+        public void WriteLine(NewLine newline, string text, params object[] args)
+        {
+            WriteLine(newline, Prefix.Auto, text, args);
         }
 
         public void WriteLine(Prefix prefix, string text, params object[] args)
@@ -269,5 +381,7 @@ namespace Remo
         {
             WriteLine(Prefix.Auto, text, args);
         }
+
+        #endregion
     }
 }

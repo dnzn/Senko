@@ -3,11 +3,17 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Linq;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using static Remo.Konsole;
 
 namespace Remo
 {
     public static class Global
     {
+        public static Konsole Kon = new Konsole();
+        public static Konsole Log = new Konsole();
+
         public static readonly Dictionary<string, int> Numbers = new Dictionary<string, int>
         {
             { "zero", 0 },
@@ -43,7 +49,40 @@ namespace Remo
             { '{', '}' },
             { '<', '>' }
         };
-        
+
+        /// <summary>
+        /// A JSON class that I whipped on my own
+        /// It takes a string and gets all key-value pairs and set them on a dictionary (Lexicon) for easy searching
+        /// </summary>
+        public class JSON
+        {
+            public string Raw { get; private set; }
+            public Dictionary<string, string> Lexicon { get; private set; }
+            
+            public JSON(string json)
+            {
+                Lexicon = new Dictionary<string, string>();
+                Raw = json;
+
+                Parse(Raw);
+            }
+
+            void Parse(string json)
+            {
+                foreach (Match matches in Regex.Matches(json, "(\"\\w+\"\\s*:\\s*(\"([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})\"|\"[0-9A-Za-z-./:+@_\\s]+\"|\\d+))"))
+                {
+                    string[] KeyValue = matches.Value.Split(':');
+
+                    for (int i = 0; i < KeyValue.Length; i++)
+                    {
+                        KeyValue[i] = KeyValue[i].Trim().Trim('\"');
+                    }
+                    
+                    Lexicon.Add(KeyValue[0], KeyValue[1]);                    
+                }
+            }
+        }
+
         /// <summary>
         /// Compare an object with any number of other objects and check if they are equal.
         /// </summary>
@@ -53,7 +92,24 @@ namespace Remo
         /// <returns>True if obj is equal to any of the args</returns>
         public static bool Is<T>(this T obj, params T[] args)
         {
-            foreach (object item in args) { if (item.Equals(obj)) { return true; } } return false;
+            foreach (object item in args)
+            {
+                try
+                {
+                    if (item.Equals(obj))
+                    {
+                        return true;
+                    }
+                }
+                catch
+                {
+                    if (item == null && obj == null)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         /// <summary>
@@ -88,11 +144,12 @@ namespace Remo
             return s1.Standardize(processHomophones) == s2.Standardize() ? true : false;
         }
 
-        public static string Replace(this string text, params object[] args)
+        //
+        public static string Format(this string text, params object[] args)
         {
-            for (int i = 0; i < args.Length; i++)
+            if (text != null)
             {
-                text = Regex.Replace(text, i.Encapsulate(@"(\{"), args[i].ToString());
+                text = string.Format(text, args);
             }
 
             return text;
@@ -114,7 +171,7 @@ namespace Remo
             {
                 if (dictionary.ContainsKey(word))
                 {
-                    text = Regex.Replace(text, pattern.Replace(word), dictionary[word].ToString());
+                    text = Regex.Replace(text, Format(pattern, word), dictionary[word].ToString());
                 }
             }
 
@@ -202,6 +259,154 @@ namespace Remo
             }
 
             return opening + text + closing;
+        }
+
+        /// <summary>
+        /// A hack to open URLs to the default browser using .NET Core.
+        /// I found it here: https://brockallen.com/2016/09/24/process-start-for-urls-on-net-core/
+        /// One could also start a different browser, if they wish
+        /// </summary>
+        /// <param name="url">The url to open</param>
+        public static void OpenURL(string url)
+        {
+            // "chrome --start-maximized https://github.com/TsurugiDanzen/Remo" will open Chrome;
+            // "microsoft-edge: https://github.com/TsurugiDanzen/Remo" will open Edge
+
+            try
+            {
+                Process.Start(url);
+            }
+            catch
+            {
+                // hack because of this: https://github.com/dotnet/corefx/issues/10361
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    url = url.Replace("&", "^&");
+                    Process.Start(new ProcessStartInfo("cmd", $"/c start {url}") { CreateNoWindow = true });
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    Process.Start("xdg-open", url);
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    Process.Start("open", url);
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
+        /// <summary>
+        /// This creates lines of strings that contain all possible method argument override combinations as per the given arguments.
+        /// I made this because it can be hard to keep up with methods that could need all possible overrides (like Write).
+        /// This isn't particularly used in the program but I may keep it here until it's not needed anymore.
+        /// </summary>
+        /// <param name="args">The argument names for the method</param>
+        /// <returns>A string representation of all possibilities</returns>
+        public static List<string> CreateOverrideArgumentList (params string[] args)
+        {
+            List<List<int>> listIntList = new List<List<int>>() { new List<int>() };
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                listIntList[0].Add(i);
+            }
+
+            bool stopLoop = false;
+            
+            while (!stopLoop)
+            {
+                for (int a = listIntList.Count; a > 0; a--)
+                {
+                    int b = a - 1;
+
+                    for (int c = 0; c < listIntList[b].Count; c++)
+                    {
+                        List<int> combo = new List<int>();
+
+                        listIntList[b].Reverse();
+                        
+                        for (int d = 0; d < listIntList[b].Count; d++)
+                        {
+                            if (d != c)
+                            {
+                                combo.Add(listIntList[b][d]);
+                            }
+                        }
+                        
+                        combo.Reverse();
+                        listIntList[b].Reverse();
+             
+                        bool isMatch = false;
+
+                        foreach (List<int> intList in listIntList)
+                        {
+                            if (intList.Count == combo.Count)
+                            {
+                                isMatch = true;
+
+                                for (int f = 0; f < combo.Count; f++)
+                                {
+                                    if (intList[f] != combo[f])
+                                    {
+                                        isMatch = false;
+                                        break;
+                                    }
+                                }
+
+                                if (isMatch)
+                                {
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (!isMatch)
+                        {
+                            if (combo.Count > 0)
+                            {
+                                listIntList.Add(combo);
+                            }
+                            else
+                            {
+                                stopLoop = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            List<List<int>> sortedList = new List<List<int>>();
+          
+            for (int i = 0; i < args.Length; i++)
+            {
+                for (int j = 0; j < listIntList.Count; j++)
+                {
+                    if (listIntList[j][0] == i)
+                    {
+                        sortedList.Add(listIntList[j]);
+                    }
+                }
+            }
+
+            List<string> stringList = new List<string>();
+
+            foreach (List<int> l in sortedList)
+            {
+                List<string> s = new List<string>();
+
+                foreach (int i in l)
+                {
+                    s.Add(args[i]);
+                }
+
+                stringList.Add(string.Join(", ", s));
+            }
+
+            return stringList;
         }
     }
 }

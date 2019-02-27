@@ -2,6 +2,9 @@
 using static Remo.Konsole;
 using static Remo.Global;
 using System.Diagnostics;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Windows;
 
 namespace Remo
 {
@@ -10,29 +13,29 @@ namespace Remo
         static void Main(string[] args)
         {
             Welcome();
-
-            Konsole Kon = new Konsole();
-            Konsole Log = new Konsole();
-
-            Kon.PrimaryColor = ConsoleColor.Cyan;
-            Kon.PromptColor = ConsoleColor.DarkGray;
             
-            Kon.Write(NewLine.After, "Testing {0}, {1}, {2}...", "one", "two", "three");
-            Kon.Write(NewLine.After, Prefix.Auto, "Testing {0}, {1}, {2}...", 4, 5, 6);
-            Kon.Write(ConsoleColor.Green, NewLine.None, Prefix.Indent, "Testing NewLine.None with Prefix.Indent.");
-            Kon.Write(NewLine.None, Prefix.Indent, "This is an inline write.");
-            Kon.Write(NewLine.After, Prefix.Prompt, "This forces a prompt so it jumps to the next line.");
-            Kon.Write(NewLine.After, Prefix.Prompt, "Let's make a long string with line breaks.\nThe quick brown fox jumps over the lazy dog.");
-            Kon.Write(NewLine.Both, Prefix.None, "Let's try Prefix.None with NewLine.Both");
+            Kon.PromptColor = ConsoleColor.DarkGray;
+            Kon.PrimaryColor = ConsoleColor.Gray;
 
-            Kon.WriteLine("Trying WriteLine() with no additional parameters.");
-            Kon.WriteLine(NewLine.Both, Prefix.Prompt, "Let's set it to Prefix.Prompt.");
+            SonyDevice.Device dev = new SonyDevice.Device(@"C:\Users\Danzen Binos\OneDrive\remo\hub.deviceinfo.json");
 
-            Console.WriteLine();
+            Kon.WriteLine(dev.Product);
+            Kon.WriteLine(dev.Region);
+            Kon.WriteLine(dev.Language);
+            Kon.WriteLine(dev.Model);
+            Kon.WriteLine(dev.Serial);
+            Kon.WriteLine(dev.MacAddress);
+            Kon.WriteLine(dev.Name);
+            Kon.WriteLine(dev.Generation);
+            Kon.WriteLine(dev.Area);
+            Kon.WriteLine(dev.CID);
 
-            Kon.Write(ConsoleColor.Gray, Prefix.Indent, Kon.Log);
+            while (true)
+            {
+                string read = Kon.ReadLine();
 
-            Console.ReadLine();
+                ParseCommand(read);                
+            }
         }
 
         static void Welcome()
@@ -43,11 +46,27 @@ namespace Remo
 
             Console.ForegroundColor = ConsoleColor.White;
 
-            Console.WriteLine("Welcome to Remo");
-            Console.WriteLine("Version: " + version);
-            Console.WriteLine("Still a work in progress." + Environment.NewLine);
+            Console.Write("REMO [Konohana] ");
+            Console.WriteLine("version: " + version);
+            Console.WriteLine(@"https://github.com/TsurugiDanzen/Remo" + Environment.NewLine);
 
             Console.ResetColor();
+        }
+
+        static void ParseCommand(string command)
+        {
+            if (command.IsSynonym("show konsole.log"))
+            {
+                Kon.Write(Prefix.Indent, Konsole.Log);
+            }
+            else if (command.IsSynonym("What are you?"))
+            {
+                Kon.Write(ConsoleColor.Yellow, Prefix.Indent, "I'm still a work in progress so there's nothing much to say.");
+            }
+            else if (command.IsSynonym("AddAlias"))
+            {
+
+            }
         }
     }
 }
