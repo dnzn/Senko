@@ -43,6 +43,7 @@ namespace Remo
 
             public Device(string file)
             {
+                // This is temporary. This method will normally access the JSON stream direct from the device and not from a file
                 if (File.Exists(file))
                 {
                     string json = File.ReadAllText(file);

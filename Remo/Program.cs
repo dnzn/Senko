@@ -16,24 +16,7 @@ namespace Remo
             
             Kon.PromptColor = ConsoleColor.DarkGray;
             Kon.PrimaryColor = ConsoleColor.Gray;
-
-            SonyDevice.Device dev = new SonyDevice.Device(@"C:\Users\Danzen Binos\OneDrive\remo\hub.deviceinfo.json");
-
-            string text = File.ReadAllText(@"C:\Users\Danzen Binos\OneDrive\remo\hub.ircodelist.json");
-
-            JSON json = new JSON(text);
-
-            Kon.WriteLine(dev.Product);
-            Kon.WriteLine(dev.Region);
-            Kon.WriteLine(dev.Language);
-            Kon.WriteLine(dev.Model);
-            Kon.WriteLine(dev.Serial);
-            Kon.WriteLine(dev.MacAddress);
-            Kon.WriteLine(dev.Name);
-            Kon.WriteLine(dev.Generation);
-            Kon.WriteLine(dev.Area);
-            Kon.WriteLine(dev.CID);
-
+            
             while (true)
             {
                 string read = Kon.ReadLine();

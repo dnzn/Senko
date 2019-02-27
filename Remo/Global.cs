@@ -65,22 +65,25 @@ namespace Remo
                 Lexicon = new List<Dictionary<string, string>>();
                 Raw = json;
 
-                Parse(Raw);
+                SonyParse(Raw);
+            }
+
+            void SonyParse(string json)
+            {
+                json = Regex.Replace(Regex.Match(json, "(\"result\":\\[.+\\])").Value, "(\"result\":\\[)|(\\])", "");
+
+                Parse(json);
             }
 
             void Parse(string json)
             {
-                json = Regex.Replace(Regex.Match(json, "(\"result\":\\[.+\\])").Value, "(\"result\":\\[)|(\\])", "");//.Replace("},{", "}" + Environment.NewLine + "{");
-                
-                string[] results = Regex.Split(json, "\\}\\s*,\\s*\\{");
-
-                for (int i = 0; i < results.Length; i++)
+                foreach (string r in Regex.Split(json, "\\}\\s*,\\s*\\{"))
                 {
-                    results[i] = results[i].Trim('{').Trim('}').Replace(@"\/", "/");
+                    string result = r.Trim('{').Trim('}').Replace(@"\/", "/");
 
                     Dictionary<string, string> entry = new Dictionary<string, string>();
 
-                    foreach (Match matches in Regex.Matches(results[i], "(\"\\w+\"\\s*:\\s*(\"([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})\"|\"[0-9A-Za-z-.\\/:+@_=\\s]+\"|\\d+))"))
+                    foreach (Match matches in Regex.Matches(result, "(\"\\w+\"\\s*:\\s*(\"([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})\"|\"[0-9A-Za-z-.\\/:+@_=\\s]+\"|\\d+))"))
                     {
                         string[] KeyValue = Regex.Split(matches.Value, "\"\\s*:\\s*\"");
 
@@ -89,7 +92,7 @@ namespace Remo
                             KeyValue[j] = KeyValue[j].Trim().Trim('\"');
                         }
 
-                        Kon.WriteLine(KeyValue[0] + " : " + KeyValue[1]);                       
+                        Kon.WriteLine(KeyValue[0] + " : " + KeyValue[1]);
 
                         entry.Add(KeyValue[0], KeyValue[1]);
                     }
