@@ -1,17 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Linq;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-using static Remo.Konsole;
-
-namespace Remo
+﻿namespace Remo
 {
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Runtime.InteropServices;
+    using System.Text.RegularExpressions;
+    using System.Linq;
+
     public static class Global
     {
         public static Konsole Kon = new Konsole();
+
         public static Konsole Log = new Konsole();
 
         public static readonly Dictionary<string, int> Numbers = new Dictionary<string, int>
@@ -28,10 +26,6 @@ namespace Remo
             { "nine", 9 }
         };
 
-        /// <summary>
-        /// This one was created for the Google Assistant and IFTTT integration.
-        /// Sometimes, text-to-speech just doesn't work well so this will help catch possible mistakes.
-        /// </summary>
         public static Dictionary<string, object> Homophones = new Dictionary<string, object>
         {
             { "won", 1 },
@@ -50,16 +44,12 @@ namespace Remo
             { '<', '>' }
         };
 
-        /// <summary>
-        /// A JSON class that I whipped on my own but it will only work for JSON results from Sony devices
-        /// It takes a string and gets all key-value pairs and set them into a list of dictionaries for easy searching
-        /// I will be extending this later to support more functions depending on needs
-        /// </summary>
         public class JSON
         {
             public string Raw { get; private set; }
+
             public List<Dictionary<string, string>> Lexicon { get; private set; }
-                        
+
             public JSON(string json)
             {
                 Lexicon = new List<Dictionary<string, string>>();
@@ -68,14 +58,14 @@ namespace Remo
                 SonyParse(Raw);
             }
 
-            void SonyParse(string json)
+            internal void SonyParse(string json)
             {
                 json = Regex.Replace(Regex.Match(json, "(\"result\":\\[.+\\])").Value, "(\"result\":\\[)|(\\])", "");
 
                 Parse(json);
             }
 
-            void Parse(string json)
+            internal void Parse(string json)
             {
                 foreach (string r in Regex.Split(json, "\\}\\s*,\\s*\\{"))
                 {
@@ -102,13 +92,6 @@ namespace Remo
             }
         }
 
-        /// <summary>
-        /// Compare an object with any number of other objects and check if they are equal.
-        /// </summary>
-        /// <typeparam name="T">Any type that can be compared</typeparam>
-        /// <param name="obj">The main object to compare</param>
-        /// <param name="args">Other objects to compare with the main object</param>
-        /// <returns>True if obj is equal to any of the args</returns>
         public static bool Is<T>(this T obj, params T[] args)
         {
             foreach (object item in args)
@@ -131,15 +114,9 @@ namespace Remo
             return false;
         }
 
-        /// <summary>
-        /// Remove whitespaces, convert text to lower case, and convert numerical words to numbers.
-        /// </summary>
-        /// <param name="text">The string to be modified.</param>
-        /// <param name="processHomophones">Set true to process homophones</param>
-        /// <returns></returns>
         public static string Standardize(this string text, bool processHomophones = false)
         {
-            text = text.ToLower(); // Convert string to lower case
+            text = text.Trim().ToLower(); // Trim whitespaces and convert string to lower case
             string pattern = @"(\s{0}|{0}\s|\s{0}\s)"; // The pattern to use to Translate()
 
             text = text.Translate(pattern, Numbers);
@@ -152,18 +129,11 @@ namespace Remo
             return Regex.Replace(text, @"\s+", "");
         }
 
-        /// <summary>
-        /// Compares two, possibly different, strings to determine whether they are synonymous or equal in context.
-        /// </summary>
-        /// <param name="s1">The first string</param>
-        /// <param name="s2">The second string</param>
-        /// <returns></returns>
         public static bool IsSynonym(this string s1, string s2, bool processHomophones = false)
         {
             return s1.Standardize(processHomophones) == s2.Standardize() ? true : false;
         }
 
-        //
         public static string Format(this string text, params object[] args)
         {
             for (int i = 0; i < args.Length; i++)
@@ -174,14 +144,6 @@ namespace Remo
             return text;
         }
 
-        /// <summary>
-        /// Translates the input text to an entry in the dictionary if found. This uses Regex to do the replacements.
-        /// </summary>
-        /// <typeparam name="T">This should work with any type that can be converted into a string</typeparam>
-        /// <param name="text">The text to translate</param>
-        /// <param name="pattern">The Regex patterm to use</param>
-        /// <param name="dictionary">The dictionary to use</param>
-        /// <returns>The translated text. If no translations are available, it will return the original.</returns>
         public static string Translate<T>(this string text, string pattern, Dictionary<string, T> dictionary)
         {
             string[] words = text.Split(' ');
@@ -197,13 +159,6 @@ namespace Remo
             return text;
         }
 
-        /// <summary>
-        /// Encapsulates a string or object in a Regex-pattern-safe manner. The proper parentheses and other brackets are automagically parsed from the capsule.
-        /// For example to get this regex pattern (\{[abc]\}), the capsule must only contain @"(\{[" and the method will do the rest.
-        /// </summary>
-        /// <param name="obj">The object to encapsulate</param>
-        /// <param name="capsule"></param>
-        /// <returns></returns>
         public static string Encapsulate(this object obj, object opening)
         {
             string text = obj.ToString();
@@ -280,12 +235,6 @@ namespace Remo
             return opening + text + closing;
         }
 
-        /// <summary>
-        /// A hack to open URLs to the default browser using .NET Core.
-        /// I found it here: https://brockallen.com/2016/09/24/process-start-for-urls-on-net-core/
-        /// One could also start a different browser, if they wish
-        /// </summary>
-        /// <param name="url">The url to open</param>
         public static void OpenURL(string url)
         {
             // "chrome --start-maximized https://github.com/TsurugiDanzen/Remo" will open Chrome;
@@ -318,14 +267,7 @@ namespace Remo
             }
         }
 
-        /// <summary>
-        /// This creates lines of strings that contain all possible method argument override combinations as per the given arguments.
-        /// I made this because it can be hard to keep up with methods that could need all possible overrides (like Write).
-        /// This isn't particularly used in the program but I may keep it here until it's not needed anymore.
-        /// </summary>
-        /// <param name="args">The argument names for the method</param>
-        /// <returns>A string representation of all possibilities</returns>
-        public static List<string> CreateOverrideArgumentList (params string[] args)
+        public static List<string> CreateOverrideArgumentList(params string[] args)
         {
             List<List<int>> listIntList = new List<List<int>>() { new List<int>() };
 
@@ -335,7 +277,7 @@ namespace Remo
             }
 
             bool stopLoop = false;
-            
+
             while (!stopLoop)
             {
                 for (int a = listIntList.Count; a > 0; a--)
@@ -347,7 +289,7 @@ namespace Remo
                         List<int> combo = new List<int>();
 
                         listIntList[b].Reverse();
-                        
+
                         for (int d = 0; d < listIntList[b].Count; d++)
                         {
                             if (d != c)
@@ -355,10 +297,10 @@ namespace Remo
                                 combo.Add(listIntList[b][d]);
                             }
                         }
-                        
+
                         combo.Reverse();
                         listIntList[b].Reverse();
-             
+
                         bool isMatch = false;
 
                         foreach (List<int> intList in listIntList)
@@ -399,7 +341,7 @@ namespace Remo
             }
 
             List<List<int>> sortedList = new List<List<int>>();
-          
+
             for (int i = 0; i < args.Length; i++)
             {
                 for (int j = 0; j < listIntList.Count; j++)

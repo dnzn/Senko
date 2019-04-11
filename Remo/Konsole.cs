@@ -1,40 +1,63 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Text.RegularExpressions;
-using static Remo.Global;
-
-using System.IO;
-
-namespace Remo
+﻿namespace Remo
 {
+    using System;
+    using System.Text.RegularExpressions;
+
     public class Konsole
     {
-        public enum Prefix { None, Prompt, Indent, Auto }
-        public enum NewLine { None, Before, After, Both }
-        public enum Color { Primary, Secondary }
+        public enum Prefix
+        { 
+            None,
+            Prompt,
+            Indent,
+            Auto
+        }
 
-        // STATIC VARIABLES
+        public enum NewLine
+        { 
+            None,
+            Before,
+            After,
+            Both
+        }
+
+        public enum Color
+        {
+            Primary,
+            Secondary
+        }
+
         static public string Log;
+
         static public bool VerboseMode = true;
+
         static public bool IgnoreColor = false;
+
         static public Prefix ForcePrefix = Prefix.Auto;
+
         static public Prefix? LastPrefix = null;
+
         static public ConsoleColor? ForceColor = null;
+
         static public string Prompt = "KON> ";
+
         public static int Operations = 0;
 
         public ConsoleColor PrimaryColor { get; set; }
+
         public ConsoleColor SecondaryColor { get; set; }
+
         public ConsoleColor PromptColor { get; set; }
-       
+
         public bool LogOnly { get; set; }
+
         public Color CurrentColor { get; set; }
 
         public string InstanceLog { get; private set; }
 
-        Prefix lastPrefix { get; set; }
-        ConsoleColor lastColor { get; set; }
+        internal Prefix lastPrefix { get; set; }
+
+        internal ConsoleColor lastColor { get; set; }
 
         public Konsole()
         {
@@ -61,10 +84,6 @@ namespace Remo
             Operations++;
             string log = DateTime.Now.ToString(Operations.ToString("D4").Encapsulate("[") + " MM/dd/yy HH:mm:ss < ");
 
-            //if (InstanceLog != "" || InstanceLog != null)
-            //{
-            //    log = Environment.NewLine + log;
-            //}
             WritePrompt();
             Console.CursorVisible = true;
             string read = Console.ReadLine();
@@ -179,7 +198,7 @@ namespace Remo
             if (!primitive && !disableLog)
             {
                 log += text; //Regex.Replace(text, @"(\s{2,})", " ", RegexOptions.Multiline);
-                
+
                 InstanceLog += InstanceLog.Is("", null) ? log : Environment.NewLine + log;
                 Log += Log.Is("", null) ? log : Environment.NewLine + log;
             }
@@ -201,10 +220,6 @@ namespace Remo
 
             Console.ResetColor();
         }
-
-        // The overrides below where created with the help of my CreateOverrideArgumentList() method
-
-        #region Konsole.Write overrides
 
         public void Write(bool primitive, ConsoleColor? color, NewLine newline, string text, params object[] args)
         {
@@ -285,10 +300,6 @@ namespace Remo
         {
             Write(Prefix.Prompt, "");
         }
-
-        #endregion
-
-        #region Konsole.WriteLine methods and overrides
 
         public void WriteLine(bool primitive, ConsoleColor? color, NewLine newline, Prefix prefix, string text, params object[] args)
         {
@@ -381,7 +392,5 @@ namespace Remo
         {
             WriteLine(Prefix.Auto, text, args);
         }
-
-        #endregion
     }
 }
