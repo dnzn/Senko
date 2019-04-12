@@ -44,54 +44,6 @@
             { '<', '>' }
         };
 
-        public class JSON
-        {
-            public string Raw { get; private set; }
-
-            public List<Dictionary<string, string>> Lexicon { get; private set; }
-
-            public JSON(string json)
-            {
-                Lexicon = new List<Dictionary<string, string>>();
-                Raw = json;
-
-                SonyParse(Raw);
-            }
-
-            internal void SonyParse(string json)
-            {
-                json = Regex.Replace(Regex.Match(json, "(\"result\":\\[.+\\])").Value, "(\"result\":\\[)|(\\])", "");
-
-                Parse(json);
-            }
-
-            internal void Parse(string json)
-            {
-                foreach (string r in Regex.Split(json, "\\}\\s*,\\s*\\{"))
-                {
-                    string result = r.Trim('{').Trim('}').Replace(@"\/", "/");
-
-                    Dictionary<string, string> entry = new Dictionary<string, string>();
-
-                    foreach (Match matches in Regex.Matches(result, "(\"\\w+\"\\s*:\\s*(\"([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})\"|\"[0-9A-Za-z-.\\/:+@_=\\s]+\"|\\d+))"))
-                    {
-                        string[] KeyValue = Regex.Split(matches.Value, "\"\\s*:\\s*\"");
-
-                        for (int j = 0; j < KeyValue.Length; j++)
-                        {
-                            KeyValue[j] = KeyValue[j].Trim().Trim('\"');
-                        }
-
-                        Kon.WriteLine(KeyValue[0] + " : " + KeyValue[1]);
-
-                        entry.Add(KeyValue[0], KeyValue[1]);
-                    }
-
-                    Lexicon.Add(entry);
-                }
-            }
-        }
-
         public static bool Is<T>(this T obj, params T[] args)
         {
             foreach (object item in args)
