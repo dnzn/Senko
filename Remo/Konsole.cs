@@ -6,7 +6,7 @@
     public class Konsole
     {
         public enum Prefix
-        { 
+        {
             None,
             Prompt,
             Indent,
@@ -14,7 +14,7 @@
         }
 
         public enum NewLine
-        { 
+        {
             None,
             Before,
             After,
@@ -27,21 +27,21 @@
             Secondary
         }
 
-        static public string Log;
+        static public string Log { get; set; } = "";
 
-        static public bool VerboseMode = true;
+        static public bool VerboseMode { get; set; } = true;
 
-        static public bool IgnoreColor = false;
+        static public bool IgnoreColor { get; set; } = false;
 
-        static public Prefix ForcePrefix = Prefix.Auto;
+        static public Prefix ForcePrefix { get; set; } = Prefix.Auto;
 
-        static public Prefix? LastPrefix = null;
+        static public Prefix? LastPrefix { get; set; } = null;
 
-        static public ConsoleColor? ForceColor = null;
+        static public ConsoleColor? ForceColor { get; set; };
 
-        static public string Prompt = "KON> ";
+        static public string Prompt { get; set; } = "KON> ";
 
-        public static int Operations = 0;
+        public static int Operations { get; private set; } = 0;
 
         public ConsoleColor PrimaryColor { get; set; }
 

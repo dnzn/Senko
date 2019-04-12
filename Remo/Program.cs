@@ -18,11 +18,9 @@ namespace Remo
             Kon.PrimaryColor = ConsoleColor.Gray;
 
             SonyDevice dev = new SonyDevice("hub");
-
-            dev.Alias.SaveToJsonFile = true;
-            dev.Alias.Add(@"C:\Users\Danzen Binos\OneDrive\remo\hub.alias.json");
+            dev.Alias.Add("xbox", "action");
             
-            Kon.WriteLine(Prefix.Prompt, dev.Alias.GetValue("xbox"));
+            Kon.WriteLine(Prefix.Prompt, dev.Info.Model);
             
             while (true)
             {
