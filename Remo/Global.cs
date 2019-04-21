@@ -8,11 +8,9 @@
 
     public static class Global
     {
-        public static Konsole Kon = new Konsole();
+        public static Konsole Kon { get; set; } = new Konsole();
 
-        public static Konsole Log = new Konsole();
-
-        public static readonly Dictionary<string, int> Numbers = new Dictionary<string, int>
+        public static Dictionary<string, int> Numbers { get; } = new Dictionary<string, int>
         {
             { "zero", 0 },
             { "one", 1 },
@@ -26,7 +24,7 @@
             { "nine", 9 }
         };
 
-        public static Dictionary<string, object> Homophones = new Dictionary<string, object>
+        public static Dictionary<string, object> Homophones { get; } = new Dictionary<string, object>
         {
             { "won", 1 },
             { "to", 2 },
@@ -36,7 +34,7 @@
             { "ate", 8 },
         };
 
-        public static readonly Dictionary<char, char> Encapsulators = new Dictionary<char, char>
+        public static Dictionary<char, char> Encapsulators { get; } = new Dictionary<char, char>
         {
             { '(', ')' },
             { '[', ']' },
@@ -186,6 +184,19 @@
 
             return opening + text + closing;
         }
+
+        public static string Join(this object[] obj)
+        {
+            string text = "";
+
+            foreach (object o in obj)
+            {
+                text += o.ToString();
+            }
+
+            return text;
+        }
+
 
         public static void OpenURL(string url)
         {

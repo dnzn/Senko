@@ -1,14 +1,10 @@
-﻿using System;
-using static Remo.Konsole;
-using static Remo.Global;
-using System.Diagnostics;
-using System.IO;
-using System.Runtime.InteropServices;
-using System.Windows;
-using System.Text.RegularExpressions;
-
-namespace Remo
+﻿namespace Remo
 {
+    using System;
+    using static Remo.Konsole;
+    using static Remo.Global;
+    using System.Diagnostics;
+
     class Program
     {
         static void Main(string[] args)
@@ -20,15 +16,26 @@ namespace Remo
 
             Konsole Kon = new Konsole();
 
-            Console.WriteLine("Test message...");
+            Kon.WriteLine("<cyan>Hello World!\n<yellow>Let's test a newline.\nThis has no color tag.\n<green>Everything is working, so far.");
+            
+            Kon.Write(Colors.PaletteWords("The quick brown fox jumps over the lazy dog.\n    And everyone lives happily ever after.", Colors.Palette.RandomLight));
 
-            Console.WriteLine(Kon.Color.Paint(@"<cyan>This is a test"));
+            Kon.WriteLine("This <gray>should be <green>{0}.", Prefixes.Setting.Prompt, Colors.Palette.LightGradientWave, Colors.SplitMethod.Char, "INLINE");
 
-            foreach (string s in Kon.Color.Split(@"This is a test. <\red>This should not be in a new line. <blue>However, this one will be."))
-            {
-                Kon.Color.Toggle(Kon.Color.Random);
-                Console.WriteLine(s);
-            }
+            Kon.WriteLine("A newline test...");
+
+            Kon.Write("Test");
+
+            Kon.Write("<yellow>Another test");
+
+            //Kon.Color.ForceReset = false;
+            Kon.Prefix.Current = Prefixes.Setting.Indent;
+
+            Kon.Write("Last");
+
+            Kon.Prefix.Current = Prefixes.Setting.Auto;
+
+            Kon.RainbowWrite("This will be in the colors of the rainbow! Well, sort of...");
 
             SonyDevice dev = new SonyDevice("hub");
             dev.Alias.Add("xbox", "action");
