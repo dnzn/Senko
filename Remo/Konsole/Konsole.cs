@@ -10,10 +10,14 @@
     {
         enum Method { Write, WriteLine };
 
-        public static bool Verbose { get; set; } = true;
+        public string Name { get; private set; }
 
-        public Konsole()
+        public static bool Verbose { get; set; } = true;
+        public static List<LogEntry> Log { get; } = new List<LogEntry>();
+
+        public Konsole(string name)
         {
+            Name = name;
             Color = new Colors(this);
             Prefix = new Prefixes(this);
             NewLine = new NewLines(this);
@@ -69,10 +73,7 @@
                     {
                         if (!Colors.ContainsTag(text))
                         {
-                            if (_color != Color.Current)
-                            {
-                                text = Colors.InsertTag(text, _color);
-                            }
+                            text = Colors.InsertTag(text, _color);
                         }
                         else
                         {
@@ -179,6 +180,8 @@
 
             text = NewLine.Insert(text, newlineOverride ?? newline);
 
+            Log.Add(new LogEntry(Name, LogEntry.OperationMethod.Write, text));
+            
             foreach (string s in Colors.Split(text))
             {
                 Console.Write(Color.Paint(s));
@@ -200,13 +203,9 @@
             Print(obj.ToString(), Method.WriteLine, p);
         }
 
-        public void RainbowWrite(object obj, bool randomSort = false)
+        public void WriteLine()
         {
-            string text = obj.ToString();
-
-            text = String.Join("", Colors.RainbowChars(text, randomSort));
-
-            Write(text);
+            Console.WriteLine();
         }
     }
 }

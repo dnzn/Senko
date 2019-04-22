@@ -70,11 +70,11 @@
             }
 
             /// <summary>
-            /// 
+            /// Randomize a number from zero to max.
             /// </summary>
-            /// <param name="max"></param>
-            /// <param name="original"></param>
-            /// <returns></returns>
+            /// <param name="max">The maximum value.</param>
+            /// <param name="original">An optional value to avoid.</param>
+            /// <returns>Returns an int within the specified range that is not equals to the original value.</returns>
             static int Randomize(int max, int original = -1)
             {
                 Random rnd = new Random();
@@ -91,11 +91,23 @@
                 return i;
             }
 
+            /// <summary>
+            /// Check if a string starts with or is a tag.
+            /// </summary>
+            /// <param name="text">The string to check</param>
+            /// <returns>True if a tag is found</returns>
             public static bool StartsWithTag(string text)
             {
                 return (Exists(Regex.Match(text, @"^<(\w+)>").Groups[1].Value) || Regex.Match(text, @"^<prompt>").Success) ? true : false;
             }
 
+            /// <summary>
+            /// Replace a tag with a new string.
+            /// </summary>
+            /// <param name="text">The string to modify.</param>
+            /// <param name="replace">The string to replace any matches.</param>
+            /// <param name="count">The number of tags to replace. It will replace all if 0.</param>
+            /// <returns>The modified string.</returns>
             public static string ReplaceTag(string text, string replace, int count = 0)
             {
                 int i = 0;
@@ -118,11 +130,22 @@
                 return text;
             }
 
+            /// <summary>
+            /// An extension to the ReplaceTag method specifically for removing tags, instead.
+            /// </summary>
+            /// <param name="text">The string to modify.</param>
+            /// <param name="count">The number of tags to remove.</param>
+            /// <returns>The modified string.</returns>
             public static string RemoveTag(string text, int count = 0)
             {
                 return ReplaceTag(text, "", 0);
             }
 
+            /// <summary>
+            /// Convert a Palette to a ConsoleColor array.
+            /// </summary>
+            /// <param name="_palette">The Palette to convert.</param>
+            /// <returns>A ConsoleColor array</returns>
             static ConsoleColor[] ConvertPalette(Palette _palette)
             {
                 string[] palette = GetPalette(_palette);
@@ -178,7 +201,7 @@
             /// <returns>A ConsoleColor</returns>
             public static string GetColor(ConsoleColor color)
             {
-                return Enum.GetName(typeof(ConsoleColor), color);
+                return color.ToString();
             }
 
             /// <summary>
@@ -205,7 +228,7 @@
             /// <returns></returns>
             public static string[] GetPalette(Palette _palette, int randomCount = 1)
             {
-                string palettename = Enum.GetName(typeof(Palette), _palette);
+                string palettename = _palette.ToString();
 
                 if (palettename.Contains("Random"))
                 {
@@ -461,7 +484,12 @@
             public static string[] PaletteInsert(string[] chunks, Palette _palette, bool randomSort = false)
             {
                 string[] palette = GetPalette(_palette, chunks.Length);
+                
+                return PaletteInsert(chunks, palette, randomSort);
+            }
 
+            public static string[] PaletteInsert(string[] chunks, string[] palette, bool randomSort = false)
+            {
                 int i = (randomSort) ? Randomize(palette.Length) : 0;
                 string color = "";
 
@@ -500,6 +528,13 @@
                 return PaletteInsert(SplitChunks(text, chunkSize), palette, randomSort);
             }
 
+            public static string[] PaletteChunks(string text, string[] palette, int chunkSize, bool randomSort = false)
+            {
+                text = RemoveTag(text);
+
+                return PaletteInsert(SplitChunks(text, chunkSize), palette, randomSort);
+            }
+
             /// <summary>
             /// 
             /// </summary>
@@ -508,6 +543,13 @@
             /// <param name="randomSort"></param>
             /// <returns></returns>
             public static string[] PaletteLines(string text, Palette palette, bool randomSort = false)
+            {
+                text = RemoveTag(text);
+
+                return PaletteInsert(SplitLines(text), palette, randomSort);
+            }
+
+            public static string[] PaletteLines(string text, string[] palette, bool randomSort = false)
             {
                 text = RemoveTag(text);
 
@@ -528,6 +570,13 @@
                 return PaletteInsert(SplitWords(text), palette, randomSort);
             }
 
+            public static string[] PaletteWords(string text, string[] palette, bool randomSort = false)
+            {
+                text = RemoveTag(text);
+
+                return PaletteInsert(SplitWords(text), palette, randomSort);
+            }
+
             /// <summary>
             /// 
             /// </summary>
@@ -540,15 +589,9 @@
                 return PaletteChunks(text, palette, 1, randomSort);
             }
 
-            /// <summary>
-            /// 
-            /// </summary>
-            /// <param name="text"></param>
-            /// <param name="randomSort"></param>
-            /// <returns></returns>
-            public static string[] RainbowChars(string text, bool randomSort = false)
+            public static string[] PaletteChars(string text, string[] palette, bool randomSort = false)
             {
-                return PaletteChars(text, Palette.Rainbow, randomSort);
+                return PaletteChunks(text, palette, 1, randomSort);
             }
         }
     }

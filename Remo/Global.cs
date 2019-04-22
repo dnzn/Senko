@@ -8,7 +8,7 @@
 
     public static class Global
     {
-        public static Konsole Kon { get; set; } = new Konsole();
+        public static Konsole Kon { get; set; } = new Konsole(nameof(Kon));
 
         public static Dictionary<string, int> Numbers { get; } = new Dictionary<string, int>
         {
