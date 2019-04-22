@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Generic;
     using System.Text.RegularExpressions;
-    using System.Linq;
 
     public partial class Konsole
     {
@@ -11,7 +10,30 @@
         
         public class Colors
         {
-            public enum Palette { Rainbow, RainbowWave, Light, Dark, LightGradient, LightGradientWave, DarkGradient, DarkGradientWave, Random, RandomLight, RandomDark, All };
+            public enum SplitMethod
+            {
+                None,
+                Line,
+                Word,
+                Chunk,
+                Char
+            };
+
+            public enum Palette
+            {
+                Rainbow,
+                RainbowWave,
+                Light,
+                Dark,
+                LightGradient,
+                LightGradientWave,
+                DarkGradient,
+                DarkGradientWave,
+                Random,
+                RandomLight,
+                RandomDark,
+                All
+            };
 
             static Dictionary<string, string[]> Palettes { get; } = new Dictionary<string, string[]>
             {
@@ -24,7 +46,6 @@
             };
 
             Konsole This { get; set; }
-            public enum SplitMethod { None, Line, Word, Chunk, Char };
             public ConsoleColor Primary { get; set; } = ConsoleColor.White;
             public ConsoleColor Secondary { get; set; } = ConsoleColor.Gray;
             public ConsoleColor Prompt { get; set; } = ConsoleColor.DarkGray;
@@ -138,25 +159,25 @@
             /// <returns>The modified string.</returns>
             public static string RemoveTag(string text, int count = 0)
             {
-                return ReplaceTag(text, "", 0);
+                return ReplaceTag(text, "", count);
             }
 
             /// <summary>
             /// Convert a Palette to a ConsoleColor array.
             /// </summary>
-            /// <param name="_palette">The Palette to convert.</param>
+            /// <param name="palette">The Palette to convert.</param>
             /// <returns>A ConsoleColor array</returns>
-            static ConsoleColor[] ConvertPalette(Palette _palette)
+            static ConsoleColor[] ConvertPalette(Palette palette)
             {
-                string[] palette = GetPalette(_palette);
-                ConsoleColor[] colors = new ConsoleColor[palette.Length];
+                string[] paletteArray = GetPalette(palette);
+                ConsoleColor[] colorArray = new ConsoleColor[paletteArray.Length];
 
-                for (int i = 0; i < palette.Length; i++)
+                for (int i = 0; i < paletteArray.Length; i++)
                 {
-                    colors[i] = GetColor(palette[i]);
+                    colorArray[i] = GetColor(paletteArray[i]);
                 }
 
-                return colors;
+                return colorArray;
             }
 
             /// <summary>
@@ -165,15 +186,15 @@
             /// <returns>A random ConsoleColor</returns>
             public static ConsoleColor RandomColor(Palette palette = Palette.All)
             {
-                ConsoleColor[] colors = ConvertPalette(palette);
-                int r = Randomize(colors.Length);
+                ConsoleColor[] colorArray = ConvertPalette(palette);
+                int r = Randomize(colorArray.Length);
 
-                while (colors[r] == Console.ForegroundColor || colors[r] == Console.BackgroundColor)
+                while (colorArray[r] == Console.ForegroundColor || colorArray[r] == Console.BackgroundColor)
                 {
-                    r = Randomize(colors.Length);
+                    r = Randomize(colorArray.Length);
                 }
 
-                return colors[r];
+                return colorArray[r];
             }
 
             /// <summary>
@@ -224,16 +245,14 @@
             /// <summary>
             /// 
             /// </summary>
-            /// <param name="_palette"></param>
+            /// <param name="palette"></param>
             /// <returns></returns>
-            public static string[] GetPalette(Palette _palette, int randomCount = 1)
+            public static string[] GetPalette(Palette palette, int randomCount = 1)
             {
-                string palettename = _palette.ToString();
+                string palettename = palette.ToString();
 
                 if (palettename.Contains("Random"))
                 {
-                    Palette palette;
-
                     if (palettename.Contains("Light"))
                     {
                         palette = Palette.Light;
@@ -247,21 +266,21 @@
                         palette = Palette.All;
                     }
 
-                    string[] randomPalette = new string[randomCount];
+                    string[] randomPaletteArray = new string[randomCount];
 
                     for (int i = 0; i < randomCount; i++)
                     {
                         string color = GetColor(RandomColor(palette));
 
-                        while (i > 0 && randomPalette[i - 1] == color)
+                        while (i > 0 && randomPaletteArray[i - 1] == color)
                         {
                             color = GetColor(RandomColor(palette));
                         }
 
-                        randomPalette[i] = color;
+                        randomPaletteArray[i] = color;
                     }
 
-                    return randomPalette;
+                    return randomPaletteArray;
                 }
                 else if (!palettename.Contains("Wave"))
                 {
@@ -273,18 +292,18 @@
 
                     palettename = palettename.Replace("Wave", "");
 
-                    string[] palette = Palettes[palettename];
+                    string[] paletteArray = Palettes[palettename];
 
-                    foreach (string color in palette)
+                    foreach (string color in paletteArray)
                     {
                         p.Add(color);
                     }
 
-                    Array.Reverse(palette);
+                    Array.Reverse(paletteArray);
 
-                    for (int i = 1; i < palette.Length - 1; i++)
+                    for (int i = 1; i < paletteArray.Length - 1; i++)
                     {
-                        p.Add(palette[i]);
+                        p.Add(paletteArray[i]);
                     }
 
                     return p.ToArray();
@@ -393,7 +412,7 @@
 
             public static string[] SplitLines(string text)
             {
-                return Regex.Replace(text, @"(\n\s*)", @"$1</>") .Split("</>");
+                return Regex.Replace(text, @"([\r\n]+\s*)", @"$1</>") .Split("</>");
             }
 
             public static string[] SplitWords(string text)
@@ -477,40 +496,40 @@
             /// <summary>
             /// 
             /// </summary>
-            /// <param name="chunks"></param>
+            /// <param name="chunkArray"></param>
             /// <param name="palette"></param>
             /// <param name="randomSort"></param>
             /// <returns></returns>
-            public static string[] PaletteInsert(string[] chunks, Palette _palette, bool randomSort = false)
+            public static string[] PaletteInsert(string[] chunkArray, Palette palette, bool randomSort = false)
             {
-                string[] palette = GetPalette(_palette, chunks.Length);
+                string[] paletteArray = GetPalette(palette, chunkArray.Length);
                 
-                return PaletteInsert(chunks, palette, randomSort);
+                return PaletteInsert(chunkArray, paletteArray, randomSort);
             }
 
-            public static string[] PaletteInsert(string[] chunks, string[] palette, bool randomSort = false)
+            public static string[] PaletteInsert(string[] chunkArray, string[] paletteArray, bool randomSort = false)
             {
-                int i = (randomSort) ? Randomize(palette.Length) : 0;
+                int i = (randomSort) ? Randomize(paletteArray.Length) : 0;
                 string color = "";
 
-                for (int j = 0; j < chunks.Length; j++)
+                for (int j = 0; j < chunkArray.Length; j++)
                 {
-                    if (!Regex.Match(chunks[j], @"^\s*$").Success)
+                    if (!Regex.Match(chunkArray[j], @"^\s*$").Success)
                     {
-                        while (i >= palette.Length && !randomSort)
+                        while (i >= paletteArray.Length && !randomSort)
                         {
-                            i -= palette.Length;
+                            i -= paletteArray.Length;
                         }
 
-                        color = palette[i];
+                        color = paletteArray[i];
 
-                        i = (randomSort) ? Randomize(palette.Length, i) : i + 1;
+                        i = (randomSort) ? Randomize(paletteArray.Length, i) : i + 1;
 
-                        chunks[j] = InsertTag(chunks[j], color);
+                        chunkArray[j] = InsertTag(chunkArray[j], color);
                     }
                 }
 
-                return chunks;
+                return chunkArray;
             }
 
             /// <summary>
@@ -528,11 +547,11 @@
                 return PaletteInsert(SplitChunks(text, chunkSize), palette, randomSort);
             }
 
-            public static string[] PaletteChunks(string text, string[] palette, int chunkSize, bool randomSort = false)
+            public static string[] PaletteChunks(string text, string[] paletteArray, int chunkSize, bool randomSort = false)
             {
                 text = RemoveTag(text);
 
-                return PaletteInsert(SplitChunks(text, chunkSize), palette, randomSort);
+                return PaletteInsert(SplitChunks(text, chunkSize), paletteArray, randomSort);
             }
 
             /// <summary>
@@ -549,11 +568,11 @@
                 return PaletteInsert(SplitLines(text), palette, randomSort);
             }
 
-            public static string[] PaletteLines(string text, string[] palette, bool randomSort = false)
+            public static string[] PaletteLines(string text, string[] paletteArray, bool randomSort = false)
             {
                 text = RemoveTag(text);
 
-                return PaletteInsert(SplitLines(text), palette, randomSort);
+                return PaletteInsert(SplitLines(text), paletteArray, randomSort);
             }
 
             /// <summary>
@@ -570,11 +589,11 @@
                 return PaletteInsert(SplitWords(text), palette, randomSort);
             }
 
-            public static string[] PaletteWords(string text, string[] palette, bool randomSort = false)
+            public static string[] PaletteWords(string text, string[] paletteArray, bool randomSort = false)
             {
                 text = RemoveTag(text);
 
-                return PaletteInsert(SplitWords(text), palette, randomSort);
+                return PaletteInsert(SplitWords(text), paletteArray, randomSort);
             }
 
             /// <summary>
@@ -589,9 +608,9 @@
                 return PaletteChunks(text, palette, 1, randomSort);
             }
 
-            public static string[] PaletteChars(string text, string[] palette, bool randomSort = false)
+            public static string[] PaletteChars(string text, string[] paletteArray, bool randomSort = false)
             {
-                return PaletteChunks(text, palette, 1, randomSort);
+                return PaletteChunks(text, paletteArray, 1, randomSort);
             }
         }
     }

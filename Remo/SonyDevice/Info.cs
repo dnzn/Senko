@@ -3,6 +3,7 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Reflection;
     using Newtonsoft.Json;
 
     public partial class SonyDevice
@@ -61,27 +62,9 @@
             {
                 Dictionary<string, string> parsed = JsonConvert.DeserializeObject<Parsed>(file).ToDictionary();
 
-                List<string> parsedKeys = new List<string>();
-
-                Dictionary<string, string> _keys = new Dictionary<string, string>();                
-
-                foreach (var k in parsed.Keys)
+                for (int i = 0; i < parsed.Count; i++)
                 {
-                    parsedKeys.Add(k);
-                }
-
-                int i = 0;
-
-                foreach (var k in this.GetType().GetProperties())
-                {
-                    _keys.Add(k.Name, parsedKeys[i]);
-
-                    i++;
-                }
-
-                foreach (KeyValuePair<string, string> k in _keys)
-                {
-                    typeof(Information).GetProperty(k.Key).SetValue(this, parsed[k.Value]);
+                    typeof(Information).GetProperty(this.GetType().GetProperties()[i].Name).SetValue(this, parsed[parsed.Keys.ToArray()[i]]);
                 }
 
                 return true;

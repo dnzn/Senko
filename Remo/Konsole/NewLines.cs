@@ -34,11 +34,31 @@
 
             public Setting WriteLine
             {
+                get { return ToWriteLine(Write); }
+                set { Write = value; }
+            }
+
+            Setting _override { get; set; } = Setting.None;
+            public Setting OverrideWrite
+            {
                 get
                 {
-                    return ToWriteLine(Write);
+                    Setting _temp = _override;
+                    _override = Write;
+                    return _temp;
                 }
-                set {  Write = value; }
+                set { _override = value; }
+            }
+
+            public Setting OverrideWriteLine
+            {
+                get { return ToWriteLine(OverrideWrite); }
+                set { _override = value; }
+            }
+
+            public NewLines(Konsole instance)
+            {
+                This = instance;
             }
 
             Setting ToWriteLine(Setting setting)
@@ -52,38 +72,6 @@
                     default:
                         return Write;
                 }
-            }
-
-            Setting _override = Setting.None;
-            public Setting OverrideWrite
-            {
-                get
-                {
-                    Setting _temp = _override;
-                    _override = Write;
-                    return _temp;
-                }
-                set
-                {
-                    _override = value;
-                }
-            }
-
-            public Setting OverrideWriteLine
-            {
-                get
-                {
-                    return ToWriteLine(OverrideWrite);
-                }
-                set
-                {
-                    _override = value;
-                }
-            }
-
-            public NewLines(Konsole instance)
-            {
-                This = instance;
             }
 
             /// <summary>
@@ -103,26 +91,6 @@
                 text = (setting == Setting.Append || setting == Setting.Both) ? text + Environment.NewLine : text;
 
                 return text;
-            }
-
-            /// <summary>
-            /// Split the text at the newlines
-            /// </summary>
-            /// <param name="text">The text to split</param>
-            /// <returns>An array of the split text</returns>
-            public string[] Split(string text)
-            {
-                string[] split = text.Split('\n');
-
-                for (int i = 0; i < split.Length; i++)
-                {
-                    if (split[i].Length != 0)
-                    {
-                        split[i] = split[i].Trim();
-                    }
-                }
-
-                return split;
             }
         }
     }

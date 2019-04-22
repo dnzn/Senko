@@ -1,8 +1,6 @@
 ﻿namespace Remo
 {
     using System;
-    using System.Collections.Generic;
-    using System.Text;
     using System.Text.RegularExpressions;
 
     public partial class Konsole
@@ -22,9 +20,9 @@
                 Text = Regex.Replace(text, @"[\r\n]+", @"\n");
             }
 
-            public string PrintString()
+            public string ToString()
             {
-                return "<{0}> [{1}] {2}: {3}".Format(Name, Time.ToString("MM/dd/yy HH:mm:ss"), Operation.ToString(), Text);
+                return "<{0}> [{1}] {2}: {3}".Format(Name, Time.ToString("MM/dd/yy HH:mm:ss"), Operation, Text);
             }
         }
     }

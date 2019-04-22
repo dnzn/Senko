@@ -1,9 +1,8 @@
-﻿namespace Remo
-{
-    using System;
-    using System.Collections.Generic;
-    using System.Text;
+﻿using System;
+using System.Text.RegularExpressions;
 
+namespace Remo
+{
     public partial class Konsole
     {
         public Prefixes Prefix { get; private set; }
@@ -19,7 +18,6 @@
             }
 
             Konsole This { get; set; }
-
             public bool Auto { get; set; } = true;
 
             Setting _current = Setting.Auto;
@@ -84,7 +82,7 @@
                 This = instance;
             }
 
-            public Setting EmbeddedPrefix(string text)
+            public Setting GetEmbeddedPrefix(string text)
             {
                 if (text.Contains("prompt".Encapsulate("<") + Prompt))
                 {
@@ -102,7 +100,7 @@
 
             public string RemovePrefix(string text)
             {
-                return text.Replace("prompt".Encapsulate("<") + Prompt, "").Replace("prompt".Encapsulate("<") + Indent, "");
+                return Regex.Replace(text, @"<prompt>({0}|{1})".Format(Prompt, Indent), ""); //text.Replace("prompt".Encapsulate("<") + Prompt, "").Replace("prompt".Encapsulate("<") + Indent, "");
             }
 
             public string Insert(string text, Setting? setting = null)
@@ -122,12 +120,10 @@
                 switch (setting)
                 {
                     case Setting.Prompt:
-                        text = ("prompt".Encapsulate("<") + Prompt + "</>" + text).Replace("\n", "\n" + "prompt".Encapsulate("<") + Indent + "</>");
+                        text = Regex.Replace("<prompt>" + Prompt + "</>" + text, @"[\r\n]+", Environment.NewLine + Indent + "</>");
                         break;
                     case Setting.Indent:
-                        text = ("prompt".Encapsulate("<") + Indent + "</>" + text).Replace("\n", "\n" + "prompt".Encapsulate("<") + Indent + "</>");
-                        break;
-                    default:
+                        text = Regex.Replace("<prompt>" + Indent + "</>" + text, @"[\r\n]+", Environment.NewLine + Indent + "</>");
                         break;
                 }
 

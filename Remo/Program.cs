@@ -20,7 +20,7 @@
             
             Kon.Write(Colors.PaletteWords("The quick brown fox jumps over the lazy dog.\n    And everyone lives happily ever after.", Colors.Palette.RandomLight));
 
-            Kon.WriteLine("This should be {0}.", Prefixes.Setting.Prompt, Colors.Palette.LightGradientWave, Colors.SplitMethod.Char, "INLINE");
+            Kon.WriteLine("SPLIT\nTHIS\nINTO\nLINES.", Prefixes.Setting.Prompt, Colors.Palette.LightGradientWave, Colors.SplitMethod.Line, "INLINE");
 
             Kon.WriteLine("A newline test...");
 
@@ -42,13 +42,13 @@
 
             foreach (Konsole.LogEntry log in Konsole.Log)
             {                
-                Console.WriteLine(log.PrintString());
+                Console.WriteLine(log.ToString());
             }
 
             SonyDevice dev = new SonyDevice("hub");
             dev.Alias.Add("xbox", "action");
             
-            //Kon.WriteLine(Prefix.Prompt, dev.Info.Model);
+            Kon.WriteLine(dev.Info.MacAddress);
             
             while (true)
             {
