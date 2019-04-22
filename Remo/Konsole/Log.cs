@@ -9,8 +9,6 @@
     {
         public class LogEntry
         {
-            public enum OperationMethod { Write, WriteLine, Read, ReadLine };
-
             public string Name { get; private set; }
             public DateTime Time { get; private set; }
             public OperationMethod Operation { get; private set; }
@@ -21,7 +19,12 @@
                 Name = name;
                 Time = DateTime.Now;
                 Operation = operation;
-                Text = Regex.Replace(text, Environment.NewLine, @"\n");
+                Text = Regex.Replace(text, @"[\r\n]+", @"\n");
+            }
+
+            public string PrintString()
+            {
+                return "<{0}> [{1}] {2}: {3}".Format(Name, Time.ToString("MM/dd/yy HH:mm:ss"), Operation.ToString(), Text);
             }
         }
     }

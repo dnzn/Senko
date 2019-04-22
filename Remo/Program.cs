@@ -41,11 +41,8 @@
             Kon.WriteLine();
 
             foreach (Konsole.LogEntry log in Konsole.Log)
-            {
-                string time = log.Time.ToString("MM/dd/yy HH:mm:ss").Encapsulate("[");
-                string text = Regex.Replace(log.Text, @"\n", "</>");
-                
-                Console.WriteLine("{0} {1} {2}: {3}", log.Name.Encapsulate("<"), time, log.Operation.ToString(), text);
+            {                
+                Console.WriteLine(log.PrintString());
             }
 
             SonyDevice dev = new SonyDevice("hub");

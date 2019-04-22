@@ -8,7 +8,7 @@
 
     public partial class Konsole
     {
-        enum Method { Write, WriteLine };
+        public enum OperationMethod { Write, WriteLine, Read, ReadLine };
 
         public string Name { get; private set; }
 
@@ -23,7 +23,7 @@
             NewLine = new NewLines(this);
         }
 
-        void Print(string text, Method method, params object[] p)
+        void Print(string text, OperationMethod method, params object[] p)
         {
             int cursorPosition = Console.CursorLeft;
 
@@ -34,7 +34,7 @@
 
             switch (method)
             {
-                case Method.Write:
+                case OperationMethod.Write:
                     newline = NewLine.Write;
                     break;
                 default:
@@ -58,14 +58,14 @@
                 {
                     if (o is NewLines.Setting _newline)
                     {
-                        newlineOverride = (method == Method.Write) ? NewLine.OverrideWrite = _newline : NewLine.OverrideWriteLine = _newline;
+                        newlineOverride = (method == OperationMethod.Write) ? NewLine.OverrideWrite = _newline : NewLine.OverrideWriteLine = _newline;
 
                         lastParameterType = o.GetType();
                     }
                     else if (o is Prefixes.Setting _prefix)
                     {
                         prefixOverride = Prefix.Override = _prefix;
-                        newlineOverride = (method == Method.Write) ? NewLine.OverrideWrite : NewLine.OverrideWriteLine;
+                        newlineOverride = (method == OperationMethod.Write) ? NewLine.OverrideWrite : NewLine.OverrideWriteLine;
 
                         lastParameterType = o.GetType();
                     }
@@ -180,7 +180,7 @@
 
             text = NewLine.Insert(text, newlineOverride ?? newline);
 
-            Log.Add(new LogEntry(Name, LogEntry.OperationMethod.Write, text));
+            Log.Add(new LogEntry(Name, method, text));
             
             foreach (string s in Colors.Split(text))
             {
@@ -190,7 +190,7 @@
 
         public void Write(object obj, params object[] p)
         {
-            Print(obj.ToString(), Method.Write, p);
+            Print(obj.ToString(), OperationMethod.Write, p);
         }
 
         public void Write(object[] obj, params object[] p)
@@ -200,7 +200,7 @@
 
         public void WriteLine(object obj, params object[] p)
         {
-            Print(obj.ToString(), Method.WriteLine, p);
+            Print(obj.ToString(), OperationMethod.WriteLine, p);
         }
 
         public void WriteLine()
