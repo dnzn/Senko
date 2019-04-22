@@ -9,7 +9,6 @@
     public partial class Konsole
     {
         public enum OperationMethod { Write, WriteLine, Read, ReadLine };
-
         public string Name { get; private set; }
 
         public static bool Verbose { get; set; } = true;
