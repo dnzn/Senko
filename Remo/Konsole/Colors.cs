@@ -25,23 +25,25 @@
                 RainbowWave,
                 Light,
                 Dark,
-                LightGradient,
-                LightGradientWave,
-                DarkGradient,
-                DarkGradientWave,
+                LightGrayscale,
+                LightGrayscaleWave,
+                DarkGrayscale,
+                DarkGrayscaleWave,
                 Random,
                 RandomLight,
                 RandomDark,
+                Auto,
+                AutoWave,
                 All
             };
 
             static Dictionary<string, string[]> Palettes { get; } = new Dictionary<string, string[]>
             {
-                { "Rainbow", new string[] { "Red", "Yellow", "Green", "Cyan", "Magenta" }  },
+                { "Rainbow", new string[] { "Red", "Yellow", "Green", "Cyan", "Magenta" } },
                 { "Light", new string[] { "Red", "Yellow", "Green", "Cyan", "Magenta", "White", "Gray" } },
                 { "Dark", new string[] { "Black", "DarkGray", "DarkCyan", "Blue", "DarkBlue", "DarkYellow", "DarkGreen", "DarkMagenta", "DarkRed" } },
-                { "LightGradient", new string[] { "White", "Gray", "DarkGray" } },
-                { "DarkGradient", new string[] { "Black", "DarkGray", "Gray" } },
+                { "LightGrayscale", new string[] { "White", "Gray", "DarkGray" } },
+                { "DarkGrayscale", new string[] { "Black", "DarkGray", "Gray" } },
                 { "All", Enum.GetNames(typeof(ConsoleColor))}
             };
 
@@ -285,6 +287,22 @@
                 else if (!palettename.Contains("Wave"))
                 {
                     return Palettes[palettename];
+                }
+                else if (palettename.Contains("Auto"))
+                {
+                    bool darkBackground = false;
+
+                    foreach (string color in Palettes["Dark"])
+                    {
+                        if (GetColor(color) == Console.BackgroundColor)
+                        {
+                            darkBackground = true;
+                        }
+                    }
+
+                    string grayscalePalette = ((darkBackground) ? "Light" : "Dark") + "Grayscale" + ((palettename.Contains("Wave")) ? "Wave" : "");
+
+                    return GetPalette((Palette)Enum.Parse(typeof(Palette), grayscalePalette, true));
                 }
                 else
                 {

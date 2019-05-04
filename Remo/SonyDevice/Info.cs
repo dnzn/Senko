@@ -47,7 +47,7 @@
             public string Area { get; private set; }
             public string CID { get; private set; }
 
-            public Information(SonyDevice instane, string file)
+            public Information(SonyDevice instance, string file)
             {
                 // This is temporary. This method will normally access the JSON stream direct from the device and not from a file
                 if (File.Exists(file))

@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using static Konsole.Colors;
 
     public partial class Konsole
     {
@@ -13,15 +14,17 @@
             ReadLine
         };
 
-        public string Name { get; private set; }
+        public string InstanceName { get; private set; }
         public static List<LogEntry> Log { get; } = new List<LogEntry>();
+        int CursorPosition { get { return Console.CursorLeft; } } 
 
-        public Konsole(string name)
+        public Konsole(string instanceName)
         {
-            Name = name;
+            InstanceName = instanceName;
             Color = new Colors(this);
             Prefix = new Prefixes(this);
             NewLine = new NewLines(this);
+            Console.CursorVisible = false;
         }
 
         void Print(string text, OperationMethod method, params object[] objectArray)
@@ -29,95 +32,49 @@
             if (method.ToString().Contains("Write"))
             {
                 List<string> stringList = new List<string>();
-                int chunkSize = 0;
-                int cursorPosition = Console.CursorLeft;
-                Type lastParameterType = null;
+                ColorSplit ColorSplitter = new ColorSplit();
 
-                Colors.SplitMethod splitMethod = Colors.SplitMethod.Char;
-                Colors.Palette? nullPalette = null;
                 Prefixes.Setting prefix = Prefix.Current;
-                Prefixes.Setting? prefixOverride = null;
-                NewLines.Setting newline;
-                NewLines.Setting? newlineOverride = null;
-
-                switch (method)
-                {
-                    case OperationMethod.Write:
-                        newline = NewLine.Write;
-                        break;
-                    default:
-                        newline = NewLine.WriteLine;
-                        break;
-                }
+                NewLines.Setting newline = (method == OperationMethod.Write) ? NewLine.Write : NewLine.WriteLine;
 
                 foreach (object obj in objectArray)
                 {
-                    if (lastParameterType != typeof(string))
+                    if (stringList.Count == 0)
                     {
                         if (obj is NewLines.Setting obj_newline)
                         {
-                            newlineOverride = (method == OperationMethod.Write) ? NewLine.OverrideWrite = obj_newline : NewLine.OverrideWriteLine = obj_newline;
-
-                            lastParameterType = obj.GetType();
+                            newline = (method == OperationMethod.Write) ? NewLine.OverrideWrite = obj_newline : NewLine.OverrideWriteLine = obj_newline;
                         }
                         else if (obj is Prefixes.Setting obj_prefix)
                         {
-                            prefixOverride = Prefix.Override = obj_prefix;
-                            newlineOverride = (method == OperationMethod.Write) ? NewLine.OverrideWrite : NewLine.OverrideWriteLine;
-
-                            lastParameterType = obj.GetType();
+                            prefix = Prefix.Override = obj_prefix;
+                            newline = (method == OperationMethod.Write) ? NewLine.OverrideWrite : NewLine.OverrideWriteLine;
                         }
                         else if (obj is ConsoleColor obj_color)
                         {
-                            if (!Colors.ContainsTag(text))
+                            if (!ContainsTag(text))
                             {
-                                text = Colors.InsertTag(text, obj_color);
+                                text = InsertTag(text, obj_color);
                             }
                             else
                             {
-                                if (Colors.StartsWithTag(text))
+                                if (StartsWithTag(text))
                                 {
-                                    text = Colors.ReplaceTag(text, Colors.GetColor(obj_color).Encapsulate("<"), 1);
+                                    text = ReplaceTag(text, GetColor(obj_color).Encapsulate("<"), 1);
                                 }
                                 else
                                 {
-                                    text = Colors.InsertTag(text, obj_color);
+                                    text = InsertTag(text, obj_color);
                                 }
                             }
-
-                            lastParameterType = obj.GetType();
                         }
-                        else if (obj is Colors.Palette obj_palette)
+                        else if (obj is ColorSplit obj_splitParameters)
                         {
-                            nullPalette = obj_palette;
-
-                            lastParameterType = obj.GetType();
-                        }
-                        else if (obj is Colors.SplitMethod obj_splitmethod)
-                        {
-                            if (lastParameterType == typeof(Colors.Palette))
-                            {
-                                splitMethod = obj_splitmethod;
-                            }
-                        }
-                        else if (obj is int x)
-                        {
-                            if (lastParameterType == typeof(Colors.Palette) && splitMethod == Colors.SplitMethod.Chunk)
-                            {
-                                chunkSize = x;
-                            }
-                            else
-                            {
-                                stringList.Add(obj.ToString());
-
-                                lastParameterType = typeof(string);
-                            }
+                            ColorSplitter = obj_splitParameters;
                         }
                         else
                         {
                             stringList.Add(obj.ToString());
-
-                            lastParameterType = typeof(string);
                         }
                     }
                     else
@@ -128,53 +85,25 @@
 
                 text = text.Format(stringList.ToArray());
 
-                if (nullPalette != null && splitMethod != Colors.SplitMethod.None)
+                text = ColorSplitter.Execute(text);
+
+                if (prefix == Prefix.Current)
                 {
-                    Colors.Palette palette = nullPalette ?? Colors.Palette.All;
-
-                    if (chunkSize == 0 && splitMethod == Colors.SplitMethod.Chunk)
-                    {
-                        splitMethod = Colors.SplitMethod.Word;
-                    }
-                    else if (chunkSize > 0 && splitMethod != Colors.SplitMethod.Chunk)
-                    {
-                        splitMethod = Colors.SplitMethod.Chunk;
-                    }
-
-                    switch (splitMethod)
-                    {
-                        case Colors.SplitMethod.Line:
-                            text = Colors.PaletteLines(text, palette).Join();
-                            break;
-                        case Colors.SplitMethod.Word:
-                            text = Colors.PaletteWords(text, palette).Join();
-                            break;
-                        case Colors.SplitMethod.Chunk:
-                            text = Colors.PaletteChunks(text, palette, chunkSize).Join();
-                            break;
-                        case Colors.SplitMethod.Char:
-                            text = Colors.PaletteChars(text, palette).Join();
-                            break;
-                    }
-                }
-
-                if (prefixOverride == null)
-                {
-                    if (cursorPosition == 0 || (cursorPosition > 0 && (newline == NewLines.Setting.Prepend || newline == NewLines.Setting.Both)))
+                    if (CursorPosition == 0 || (CursorPosition > 0 && (newline == NewLines.Setting.Prepend || newline == NewLines.Setting.Both)))
                     {
                         text = Prefix.Insert(text);
                     }
                 }
                 else
                 {
-                    text = Prefix.Insert(text, prefixOverride ?? prefix);
+                    text = Prefix.Insert(text, prefix);
                 }
 
-                text = NewLine.Insert(text, newlineOverride ?? newline);
+                text = NewLine.Insert(text, newline);
 
-                Log.Add(new LogEntry(Name, method, text));
+                Log.Add(new LogEntry(InstanceName, method, text));
 
-                foreach (string colorSplit in Colors.Split(text))
+                foreach (string colorSplit in Split(text))
                 {
                     Console.Write(Color.Paint(colorSplit));
                 } 
@@ -199,6 +128,104 @@
         public void WriteLine()
         {
             Console.WriteLine();
+        }
+
+        public void WriteLog(bool truncate = false)
+        {
+            Color.Toggle();
+            Color.Switch();
+
+            foreach (LogEntry log in Log)
+            {
+                Console.WriteLine(log.ToString(truncate));
+            }
+
+            Color.Toggle();
+        }
+
+        public class ColorSplit
+        {
+            public SplitMethod Method { get; private set; }
+            public Palette Palette { get; private set; }
+            public int ChunkSize { get; private set; }
+
+            public ColorSplit(SplitMethod method, Palette? palette, int chunkSize)
+            {
+                SetParameters(method, palette, chunkSize);
+            }
+
+            public ColorSplit(SplitMethod method, Palette palette)
+            {
+                SetParameters(method, palette);
+            }
+
+            public ColorSplit(SplitMethod method)
+            {
+                SetParameters(method, null);
+            }
+
+            public ColorSplit(Palette palette)
+            {
+                SetParameters(SplitMethod.Char, palette);
+            }
+
+            public ColorSplit(int chunkSize)
+            {
+                SetParameters(SplitMethod.Chunk, null, chunkSize);
+            }
+
+            public ColorSplit()
+            {
+                SetParameters(SplitMethod.None, null);
+            }
+
+            void SetParameters(SplitMethod method, Palette? palette, int chunkSize = 0)
+            {
+                if (chunkSize == 0 && method == SplitMethod.Chunk)
+                {
+                    method = SplitMethod.Word;
+                }
+                else if (chunkSize > 0 && method != SplitMethod.Chunk)
+                {
+                    method = SplitMethod.Chunk;
+                }
+
+                Method = method;
+
+                if (method != SplitMethod.None)
+                {
+                    Palette = palette ?? Palette.Auto;
+
+                    if (chunkSize > 0)
+                    {
+                        ChunkSize = chunkSize;
+                    }
+                }
+            }
+
+            public string Execute(string text)
+            {
+                if (Method != SplitMethod.None)
+                {
+                    switch (Method)
+                    {
+                        case SplitMethod.Line:
+                            text = PaletteLines(text, Palette).Join();
+                            break;
+                        case SplitMethod.Word:
+                            text = PaletteWords(text, Palette).Join();
+                            break;
+                        case SplitMethod.Chunk:
+                            text = PaletteChunks(text, Palette, ChunkSize).Join();
+                            break;
+                        case SplitMethod.Char:
+                            text = PaletteChars(text, Palette).Join();
+                            break;
+                    }
+                }
+
+                return text;
+            }
         }
     }
 }

@@ -2,6 +2,7 @@
 {
     using System;
     using static Remo.Konsole;
+    using static Remo.Konsole.Colors;
     using static Remo.Global;
     using System.Diagnostics;
     using System.Collections.Generic;
@@ -18,9 +19,9 @@
 
             Kon.WriteLine("<cyan>Hello World!\n<yellow>Let's test a newline.\nThis has no color tag.\n<green>Everything is working, so far.");
             
-            Kon.Write(Colors.PaletteWords("The quick brown fox jumps over the lazy dog.\n    And everyone lives happily ever after.", Colors.Palette.RandomLight));
+            Kon.Write("The quick brown fox jumps over the lazy dog.\nAnd everyone lives happily ever after.", new ColorSplit(SplitMethod.Word, Palette.RandomLight));
 
-            Kon.WriteLine("SPLIT\nTHIS\nINTO\nLINES.", Prefixes.Setting.Prompt, Colors.Palette.LightGradientWave, Colors.SplitMethod.Line, "INLINE");
+            Kon.WriteLine("SPLIT\nTHIS\nINTO\n{0}.", Prefixes.Setting.Prompt, new ColorSplit(SplitMethod.Line, Palette.AutoWave), "LINES");
 
             Kon.WriteLine("A newline test...");
 
@@ -35,20 +36,17 @@
 
             Kon.Prefix.Current = Prefixes.Setting.Auto;
 
-            Kon.Write("This will be in the colors of the rainbow! Well, sort of...", Colors.Palette.RainbowWave, Colors.SplitMethod.Word);
+            Kon.Write("This will be in the colors of the rainbow! Well, sort of...", new ColorSplit(SplitMethod.Word, Palette.RainbowWave));
 
             Kon.WriteLine();
             Kon.WriteLine();
 
-            foreach (Konsole.LogEntry log in Konsole.Log)
-            {                
-                Console.WriteLine(log.ToString());
-            }
+            Kon.WriteLog(true);
 
             SonyDevice dev = new SonyDevice("hub");
             dev.Alias.Add("xbox", "action");
             
-            Kon.WriteLine(dev.Info.MacAddress);
+            Kon.WriteLine(dev.Info.Model);
             
             while (true)
             {

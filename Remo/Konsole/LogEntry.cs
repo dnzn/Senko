@@ -20,9 +20,11 @@
                 Text = Regex.Replace(text, @"[\r\n]+", @"\n");
             }
 
-            public string ToString()
+            public string ToString(bool truncate = false)
             {
-                return "<{0}> [{1}] {2}: {3}".Format(Name, Time.ToString("MM/dd/yy HH:mm:ss"), Operation, Text);
+                string text = (truncate) ? (Text.Length <= 70) ? Text : Text.Substring(0, 70) + "[...]" : Text;
+
+                return "[{0}][{1}]{2} {3}".Format(Name, Time.ToString("MM/dd/yy HH:mm:ss:fff"), Operation.Encapsulate("[").PadRight(11), text);
             }
         }
     }
