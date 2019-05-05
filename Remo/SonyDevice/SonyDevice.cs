@@ -1,9 +1,6 @@
 ﻿namespace Remo
 {
     using System.Collections.Generic;
-    using System.IO;
-    using static Remo.Global;
-    using static Remo.Konsole;
 
     public partial class SonyDevice
     {

@@ -1,8 +1,6 @@
-﻿namespace Remo
+﻿namespace Konsole
 {
     using System;
-    using System.Collections.Generic;
-    using System.Text.RegularExpressions;
 
     public partial class Konsole
     {

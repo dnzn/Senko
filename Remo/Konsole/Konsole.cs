@@ -1,7 +1,9 @@
-﻿namespace Remo
+﻿namespace Konsole
 {
     using System;
     using System.Collections.Generic;
+    using Global;
+
     using static Konsole.Colors;
 
     public partial class Konsole
@@ -14,17 +16,23 @@
             ReadLine
         };
 
-        public string InstanceName { get; private set; }
+        public string Name { get; private set; }
         public static List<LogEntry> Log { get; } = new List<LogEntry>();
-        int CursorPosition { get { return Console.CursorLeft; } } 
+        public static List<string> Names { get; private set; } = new List<string>();
+        static int CursorPosition { get { return Console.CursorLeft; } } 
 
         public Konsole(string instanceName)
         {
-            InstanceName = instanceName;
+            Name = instanceName;
             Color = new Colors(this);
             Prefix = new Prefixes(this);
             NewLine = new NewLines(this);
             Console.CursorVisible = false;
+
+            if (!Names.Contains(Name))
+            {
+                Names.Add(Name);
+            }
         }
 
         void Print(string text, OperationMethod method, params object[] objectArray)
@@ -101,13 +109,15 @@
 
                 text = NewLine.Insert(text, newline);
 
-                Log.Add(new LogEntry(InstanceName, method, text));
+                Log.Add(new LogEntry(Name, method, text));
 
                 foreach (string colorSplit in Split(text))
                 {
                     Console.Write(Color.Paint(colorSplit));
                 } 
             }
+
+            Console.ResetColor();
         }
 
         public void Write(object obj, params object[] objectArray)
@@ -130,17 +140,32 @@
             Console.WriteLine();
         }
 
-        public void WriteLog(bool truncate = false)
+        public void WriteInstanceLog(bool truncate = true)
         {
-            Color.Toggle();
-            Color.Switch();
+            WriteLog(Name, truncate);
+        }
+
+        public static void WriteLog(string name, bool truncate = true)
+        {
+            string limitName = null;
+
+            if (name != null && Names.Contains(name))
+            {
+                limitName = name;
+            }
 
             foreach (LogEntry log in Log)
             {
-                Console.WriteLine(log.ToString(truncate));
+                if (limitName == null || limitName == log.Name)
+                {
+                    Console.WriteLine(log.ToString(limitName, truncate));
+                }
             }
+        }
 
-            Color.Toggle();
+        public static void WriteLog(bool truncate = true)
+        {
+            WriteLog(null, truncate);
         }
 
         public class ColorSplit

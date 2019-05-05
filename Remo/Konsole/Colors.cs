@@ -1,8 +1,9 @@
-﻿namespace Remo
+﻿namespace Konsole
 {
     using System;
     using System.Collections.Generic;
     using System.Text.RegularExpressions;
+    using Global;
 
     public partial class Konsole
     {
@@ -24,14 +25,19 @@
                 Rainbow,
                 RainbowWave,
                 Light,
+                LightWave,
                 Dark,
-                LightGrayscale,
-                LightGrayscaleWave,
-                DarkGrayscale,
-                DarkGrayscaleWave,
+                DarkWave,
+                LightMono,
+                LightMonoWave,
+                DarkMono,
+                DarkMonoWave,
                 Random,
                 RandomLight,
                 RandomDark,
+                RandomAuto,
+                AutoMono,
+                AutoMonoWave,
                 Auto,
                 AutoWave,
                 All
@@ -40,10 +46,10 @@
             static Dictionary<string, string[]> Palettes { get; } = new Dictionary<string, string[]>
             {
                 { "Rainbow", new string[] { "Red", "Yellow", "Green", "Cyan", "Magenta" } },
-                { "Light", new string[] { "Red", "Yellow", "Green", "Cyan", "Magenta", "White", "Gray" } },
+                { "Light", new string[] { "White", "Gray", "Cyan", "Yellow", "Green", "Magenta", "Red" } },
                 { "Dark", new string[] { "Black", "DarkGray", "DarkCyan", "Blue", "DarkBlue", "DarkYellow", "DarkGreen", "DarkMagenta", "DarkRed" } },
-                { "LightGrayscale", new string[] { "White", "Gray", "DarkGray" } },
-                { "DarkGrayscale", new string[] { "Black", "DarkGray", "Gray" } },
+                { "LightMono", new string[] { "White", "Gray", "DarkGray" } },
+                { "DarkMono", new string[] { "Black", "DarkGray", "Gray" } },
                 { "All", Enum.GetNames(typeof(ConsoleColor))}
             };
 
@@ -263,6 +269,12 @@
                     {
                         palette = Palette.Dark;
                     }
+                    else if (palettename.Contains("Auto"))
+                    {
+                        bool darkBackground = BackgroundIsDark();
+
+                        palette = (darkBackground) ? Palette.Light : Palette.Dark;
+                    }
                     else
                     {
                         palette = Palette.All;
@@ -284,25 +296,17 @@
 
                     return randomPaletteArray;
                 }
+                else if (palettename.Contains("Auto"))
+                {
+                    bool darkBackground = BackgroundIsDark();
+
+                    palettename = Regex.Replace(palettename, "Auto", ((darkBackground) ? "Light" : "Dark"));
+
+                    return GetPalette(palettename);
+                }
                 else if (!palettename.Contains("Wave"))
                 {
                     return Palettes[palettename];
-                }
-                else if (palettename.Contains("Auto"))
-                {
-                    bool darkBackground = false;
-
-                    foreach (string color in Palettes["Dark"])
-                    {
-                        if (GetColor(color) == Console.BackgroundColor)
-                        {
-                            darkBackground = true;
-                        }
-                    }
-
-                    string grayscalePalette = ((darkBackground) ? "Light" : "Dark") + "Grayscale" + ((palettename.Contains("Wave")) ? "Wave" : "");
-
-                    return GetPalette((Palette)Enum.Parse(typeof(Palette), grayscalePalette, true));
                 }
                 else
                 {
@@ -326,6 +330,35 @@
 
                     return p.ToArray();
                 }
+            }
+
+            static bool BackgroundIsDark()
+            {
+                foreach (string color in Palettes["Dark"])
+                {
+                    if (GetColor(color) == Console.BackgroundColor)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            static string[] GetPalette(string paletteName, int randomCount = 1)
+            {
+                Palette palette;
+
+                try
+                {
+                    palette = (Palette)Enum.Parse(typeof(Palette), paletteName, true);
+                }
+                catch
+                {
+                    palette = Palette.Auto;
+                }
+
+                return GetPalette(palette, randomCount);
             }
 
             public static string InsertTag(string text, ConsoleColor color)
@@ -453,27 +486,18 @@
             }
 
             /// <summary>
-            /// 
-            /// </summary>
-            /// <returns></returns>
-            public ConsoleColor GetSwitch()
-            {
-                if (Current == Primary)
-                {
-                    return Secondary;
-                }
-                else
-                {
-                    return Primary;
-                }
-            }
-
-            /// <summary>
             /// Switch Current color between Primary and Secondary colors or set to Primary if Current is not any of the two.
             /// </summary>
             public void Switch()
             {
-                Current = GetSwitch();
+                if (Current == Primary)
+                {
+                    Current = Secondary;
+                }
+                else
+                {
+                    Current = Primary;
+                }
             }
 
             /// <summary>
@@ -495,20 +519,40 @@
                     }
                 }
 
-                string colortag = Regex.Match(text, @"^<(\w+)>").Groups[1].Value; // Parse the color from the color tag
+                string colortag = Regex.Match(text, @"^<(\w+)>").Groups[1].Value; // Parse the possible color from the tag
+                bool validColor;
                 
                 if (Exists(colortag))
                 {
                     Current = GetColor(colortag);
+                    validColor = true;
                 }
-                else if (colortag == "prompt")
+                else
                 {
-                    Console.ForegroundColor = Prompt;
+                    validColor = true;
+
+                    switch (colortag)
+                    {
+                        case "prompt":
+                            Console.ForegroundColor = Prompt;
+                            break;
+                        case "primary":
+                            Console.ForegroundColor = Primary;
+                            break;
+                        case "secondary":
+                            Console.ForegroundColor = Secondary;
+                            break;
+                        case "random":
+                            Console.ForegroundColor = RandomColor(Palette.Auto);
+                            break;
+                        default:
+                            validColor = false;
+                            break;
+                    }
                 }
 
-                text = Regex.Replace(text, @"^<\w+>", ""); // Remove the color tag
-
-                return Regex.Replace(text, @"<\\(\w+>)", @"<$1"); // Clean up any forced literal tags from <\text> to <text>
+                // Remove tag if tag is a valid color and clean up any forced literal tags from <\text> to <text>
+                return Regex.Replace(((validColor) ? Regex.Replace(text, @"^<\w+>", "") : text), @"<\\(\w+>)", @"<$1");
             }
             
             /// <summary>

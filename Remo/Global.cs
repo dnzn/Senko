@@ -1,14 +1,15 @@
-﻿namespace Remo
+﻿namespace Global
 {
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Runtime.InteropServices;
     using System.Text.RegularExpressions;
-    using System.Linq;
+    using Konsole;
 
     public static class Global
     {
         public static Konsole Kon { get; set; } = new Konsole(nameof(Kon));
+        public static Konsole Error { get; set; } = new Konsole(nameof(Error));
 
         public static Dictionary<string, int> Numbers { get; } = new Dictionary<string, int>
         {

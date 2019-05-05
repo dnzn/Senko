@@ -1,7 +1,8 @@
-﻿namespace Remo
+﻿namespace Konsole
 {
     using System;
     using System.Text.RegularExpressions;
+    using Global;
 
     public partial class Konsole
     {
@@ -20,11 +21,32 @@
                 Text = Regex.Replace(text, @"[\r\n]+", @"\n");
             }
 
-            public string ToString(bool truncate = false)
+            public string ToString(string instance, bool truncate = false)
             {
+                int nameLength = 0;
+
+                if (instance == null)
+                {
+                    foreach (string n in Names)
+                    {
+                        nameLength = (n.Length > nameLength) ? n.Length : nameLength;
+                    }
+                }
+                else
+                {
+                    nameLength = instance.Length;
+                }
+
+                string name = Name.PadRight(nameLength);
+                string operation = Operation.ToString().PadRight(9);
                 string text = (truncate) ? (Text.Length <= 70) ? Text : Text.Substring(0, 70) + "[...]" : Text;
 
-                return "[{0}][{1}]{2} {3}".Format(Name, Time.ToString("MM/dd/yy HH:mm:ss:fff"), Operation.Encapsulate("[").PadRight(11), text);
+                return "{0} | {1} | {2} | {3}".Format(Time.ToString("MM/dd/yy HH:mm:ss:fff"), name, operation, text);
+            }
+
+            public string ToString(bool truncate = false)
+            {
+                return ToString(null, truncate);
             }
         }
     }

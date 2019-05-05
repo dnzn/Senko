@@ -1,8 +1,9 @@
-﻿using System;
-using System.Text.RegularExpressions;
-
-namespace Remo
+﻿namespace Konsole
 {
+    using System;
+    using System.Text.RegularExpressions;
+    using Global;
+
     public partial class Konsole
     {
         public Prefixes Prefix { get; private set; }

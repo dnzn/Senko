@@ -6,8 +6,7 @@
     using System.Linq;
     using System.Text.RegularExpressions;
     using Newtonsoft.Json;
-    using static Konsole;
-    using static Global;
+    using Global;
 
     public partial class SonyDevice
     {
