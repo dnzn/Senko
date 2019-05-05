@@ -6,12 +6,13 @@
     using System.Text.RegularExpressions;
     using Konsole;
 
-    public static class Global
-    {
-        public static Konsole Kon { get; set; } = new Konsole(nameof(Kon));
-        public static Konsole Error { get; set; } = new Konsole(nameof(Error));
+    using static Fields;
 
-        public static Dictionary<string, int> Numbers { get; } = new Dictionary<string, int>
+    public static class Fields
+    {
+        public static Kontext Kon = new Kontext(nameof(Kon));
+
+        public readonly static Dictionary<string, int> Numbers = new Dictionary<string, int>
         {
             { "zero", 0 },
             { "one", 1 },
@@ -42,7 +43,10 @@
             { '{', '}' },
             { '<', '>' }
         };
+    }
 
+    public static class Extensions
+    {
         public static bool Is<T>(this T obj, params T[] args)
         {
             foreach (object item in args)
@@ -197,8 +201,10 @@
 
             return text;
         }
+    }
 
-
+    public static class Methods
+    {
         public static void OpenURL(string url)
         {
             // "chrome --start-maximized https://github.com/TsurugiDanzen/Remo" will open Chrome;

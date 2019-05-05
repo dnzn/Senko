@@ -4,9 +4,29 @@
     using System.Collections.Generic;
     using Global;
 
-    using static Konsole.Colors;
+    using static Kontext;
+    using static Static;
+    using static Kontext.Colors;
+    using System.Text.RegularExpressions;
 
-    public partial class Konsole
+    public static class Static
+    {
+        public static List<LogEntry> Log { get; } = new List<LogEntry>();
+        public static List<string> Names { get; private set; } = new List<string>();
+
+        public static void WriteLog(this Kontext konsole, bool truncate = true)
+        {
+            Kontext.WriteLog(konsole.Name, truncate);
+        }
+
+        public static string ForceIndent(this string text, int indentLength)
+        {
+            string Indent = new string(' ', indentLength);
+            return Regex.Replace(text, Environment.NewLine + "|^", @"$&" + Indent);
+        }
+    }
+
+    public partial class Kontext
     {
         public enum OperationMethod
         {
@@ -17,11 +37,9 @@
         };
 
         public string Name { get; private set; }
-        public static List<LogEntry> Log { get; } = new List<LogEntry>();
-        public static List<string> Names { get; private set; } = new List<string>();
         static int CursorPosition { get { return Console.CursorLeft; } } 
 
-        public Konsole(string instanceName)
+        public Kontext(string instanceName)
         {
             Name = instanceName;
             Color = new Colors(this);
@@ -138,11 +156,6 @@
         public void WriteLine()
         {
             Console.WriteLine();
-        }
-
-        public void WriteInstanceLog(bool truncate = true)
-        {
-            WriteLog(Name, truncate);
         }
 
         public static void WriteLog(string name, bool truncate = true)

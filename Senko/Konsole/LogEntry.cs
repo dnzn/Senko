@@ -4,7 +4,9 @@
     using System.Text.RegularExpressions;
     using Global;
 
-    public partial class Konsole
+    using static Static;
+
+    public partial class Kontext
     {
         public class LogEntry
         {

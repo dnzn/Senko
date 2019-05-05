@@ -2,7 +2,7 @@
 {
     using System;
 
-    public partial class Konsole
+    public partial class Kontext
     {
         public NewLines NewLine { get; private set; }
 
@@ -16,7 +16,7 @@
                 Both
             }
 
-            Konsole This { get; set; }
+            Kontext This { get; set; }
             public Setting Former { get; set; } = Setting.None;
 
             Setting _write { get; set; } = Setting.None;
@@ -54,7 +54,7 @@
                 set { _override = value; }
             }
 
-            public NewLines(Konsole instance)
+            public NewLines(Kontext instance)
             {
                 This = instance;
             }

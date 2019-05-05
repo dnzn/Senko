@@ -5,7 +5,7 @@
     using System.Text.RegularExpressions;
     using Global;
 
-    public partial class Konsole
+    public partial class Kontext
     {
         public Colors Color { get; private set; }
         
@@ -53,7 +53,7 @@
                 { "All", Enum.GetNames(typeof(ConsoleColor))}
             };
 
-            Konsole This { get; set; }
+            Kontext This { get; set; }
             public ConsoleColor Primary { get; set; } = ConsoleColor.White;
             public ConsoleColor Secondary { get; set; } = ConsoleColor.Gray;
             public ConsoleColor Prompt { get; set; } = ConsoleColor.DarkGray;
@@ -90,7 +90,7 @@
                 }
             }
 
-            public Colors(Konsole instance)
+            public Colors(Kontext instance)
             {
                 This = instance;
                 Console.ResetColor();
@@ -434,7 +434,7 @@
                     {
                         if (i < text.Length)
                         {
-                            while (!countWhitespace && Regex.Match(text[i].ToString(), @"\s").Success)
+                            while (!countWhitespace && i < text.Length && Regex.Match(text[i].ToString(), @"\s").Success)
                             {
                                 chunk += text[i];
                                 i++;
@@ -443,7 +443,10 @@
 
                         if (Regex.Match(chunk, @"^\s+$").Success)
                         {
-                            list[list.Count - 1] += chunk;
+                            if (list.Count > 1)
+                            {
+                                list[list.Count - 1] += chunk;
+                            }
                             chunk = "";
                         }
 
@@ -500,6 +503,11 @@
                 }
             }
 
+            public void Reset()
+            {
+                Toggle(Primary);
+            }
+
             /// <summary>
             /// Parse the color tag &lt;color&gt; at the beginning of text and change the Current color if it is a match. Ignore if it isn't a known color.
             /// </summary>
@@ -509,7 +517,7 @@
             {
                 if (ForceReset)
                 {
-                    Switch();
+                    Reset();
                 }
                 else
                 {

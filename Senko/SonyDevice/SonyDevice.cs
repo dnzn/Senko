@@ -1,4 +1,4 @@
-﻿namespace Remo
+﻿namespace Senko
 {
     using System.Collections.Generic;
 

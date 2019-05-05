@@ -4,7 +4,7 @@
     using System.Text.RegularExpressions;
     using Global;
 
-    public partial class Konsole
+    public partial class Kontext
     {
         public Prefixes Prefix { get; private set; }
 
@@ -18,7 +18,7 @@
                 Auto
             }
 
-            Konsole This { get; set; }
+            Kontext This { get; set; }
             public bool Auto { get; set; } = true;
 
             Setting _current = Setting.Auto;
@@ -78,7 +78,7 @@
             public string Prompt { get; set; } = "KON > ";
             public string Indent { get { return new string(' ', Prompt.Length); } }
 
-            public Prefixes(Konsole instance)
+            public Prefixes(Kontext instance)
             {
                 This = instance;
             }
@@ -124,12 +124,12 @@
                         text = Regex.Replace("<prompt>" + Prompt + "</>" + text, @"[\r\n]+", Environment.NewLine + Indent + "</>");
                         break;
                     case Setting.Indent:
-                        text = Regex.Replace("<prompt>" + Indent + "</>" + text, @"[\r\n]+", Environment.NewLine + Indent + "</>");
+                        text = Regex.Replace(Indent + "</>" + text, @"[\r\n]+", Environment.NewLine + Indent + "</>");
                         break;
                 }
 
                 return text;
-            }
+            }         
         }
     }
 }
