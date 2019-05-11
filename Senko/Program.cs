@@ -4,9 +4,9 @@
     using Global;
     using System.Diagnostics;
 
-    using static Konsole.Kontext;
-    using static Konsole.Static;
-    using static Konsole.Kontext.Colors;
+    using static Kontext.Konsole;
+    using static Kontext.Static;
+    using static Kontext.Konsole.Colors;
     using static Global.Fields;
 
     class Program
@@ -37,9 +37,8 @@
 
             Kon.Prefix.Current = Prefixes.Setting.Auto;
 
-            Kon.Write("This will be in the colors of the rainbow! Well, sort of...", new ColorSplit(SplitMethod.Word, Palette.RainbowWave));
+            Kon.WriteLine("This will be in the colors of the rainbow! Well, sort of...", new ColorSplit(SplitMethod.Word, Palette.RainbowWave));
 
-            Kon.WriteLine();
             Kon.WriteLine();
 
             WriteLog();
@@ -59,6 +58,10 @@
 
         static void Welcome()
         {
+            // 我が名は仙狐。
+            // The project has been renamed to Senko, after the helpful fox in the anime "Sewayaki Kitsune no Senko-san"
+            // Senko is also acronym for "SENd KOmmand".
+
             System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();
             FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
             string version = fvi.FileVersion;
@@ -97,8 +100,9 @@
             Kon.Prefix.Current = Prefixes.Setting.None;
             
             Kon.WriteLine(ascii, NewLines.Setting.Both);
+            Kon.WriteLine(new string('-', Console.WindowWidth) + Environment.NewLine);
             Kon.WriteLine("SENKO (Project:REMO) | Remote Controller Interface\n<gray>Version: {0}", ConsoleColor.White, version);
-            Kon.WriteLine(@"https://github.com/TsurugiDanzen/Remo" + Environment.NewLine, ConsoleColor.Gray);
+            Kon.WriteLine(@"https://github.com/TsurugiDanzen/Senko" + Environment.NewLine, ConsoleColor.Gray);
 
             Kon.Prefix.Current = Prefixes.Setting.Auto;
 

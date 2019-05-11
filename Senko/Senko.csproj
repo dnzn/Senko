@@ -6,9 +6,9 @@
     <Authors>Danzen Binos</Authors>
     <Company>Iqebana Studios</Company>
     <Description />
-    <AssemblyVersion>0.0.0.*</AssemblyVersion>
+    <AssemblyVersion>0.0.0.0</AssemblyVersion>
     <FileVersion>0.0.0.0</FileVersion>
-    <Deterministic>false</Deterministic>
+    <Deterministic>False</Deterministic>
     <PackageId>Senko</PackageId>
     <Product>Senko</Product>
   </PropertyGroup>

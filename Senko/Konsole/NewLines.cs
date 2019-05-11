@@ -1,8 +1,9 @@
-﻿namespace Konsole
+﻿namespace Kontext
 {
     using System;
+    using System.Text.RegularExpressions;
 
-    public partial class Kontext
+    public partial class Konsole
     {
         public NewLines NewLine { get; private set; }
 
@@ -16,7 +17,7 @@
                 Both
             }
 
-            Kontext This { get; set; }
+            Konsole This { get; set; }
             public Setting Former { get; set; } = Setting.None;
 
             Setting _write { get; set; } = Setting.None;
@@ -54,7 +55,7 @@
                 set { _override = value; }
             }
 
-            public NewLines(Kontext instance)
+            public NewLines(Konsole instance)
             {
                 This = instance;
             }
@@ -85,10 +86,15 @@
                     setting = Write;
                 }
 
-                text = (setting == Setting.Prepend || setting == Setting.Both) ? Environment.NewLine + text : text;
+                text = ((setting == Setting.Prepend || setting == Setting.Both) && CursorPosition != 0) ? Environment.NewLine + text : text;
                 text = (setting == Setting.Append || setting == Setting.Both) ? text + Environment.NewLine : text;
 
                 return text;
+            }
+
+            public static string Flush(string text)
+            {
+                return Regex.Replace(text, @"[\r\n]+", Environment.NewLine);
             }
         }
     }

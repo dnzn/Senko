@@ -1,12 +1,12 @@
-﻿namespace Konsole
+﻿namespace Kontext
 {
     using System;
     using System.Collections.Generic;
     using Global;
 
-    using static Kontext;
+    using static Konsole;
     using static Static;
-    using static Kontext.Colors;
+    using static Konsole.Colors;
     using System.Text.RegularExpressions;
 
     public static class Static
@@ -14,9 +14,9 @@
         public static List<LogEntry> Log { get; } = new List<LogEntry>();
         public static List<string> Names { get; private set; } = new List<string>();
 
-        public static void WriteLog(this Kontext konsole, bool truncate = true)
+        public static void WriteLog(this Konsole konsole, bool truncate = true)
         {
-            Kontext.WriteLog(konsole.Name, truncate);
+            Konsole.WriteLog(konsole.Name, truncate);
         }
 
         public static string ForceIndent(this string text, int indentLength)
@@ -26,7 +26,7 @@
         }
     }
 
-    public partial class Kontext
+    public partial class Konsole
     {
         public enum OperationMethod
         {
@@ -39,7 +39,7 @@
         public string Name { get; private set; }
         static int CursorPosition { get { return Console.CursorLeft; } } 
 
-        public Kontext(string instanceName)
+        public Konsole(string instanceName)
         {
             Name = instanceName;
             Color = new Colors(this);
@@ -53,7 +53,7 @@
             }
         }
 
-        void Print(string text, OperationMethod method, params object[] objectArray)
+        void Echo(string text, OperationMethod method, params object[] objectArray)
         {
             if (method.ToString().Contains("Write"))
             {
@@ -140,7 +140,7 @@
 
         public void Write(object obj, params object[] objectArray)
         {
-            Print(obj.ToString(), OperationMethod.Write, objectArray);
+            Echo(obj.ToString(), OperationMethod.Write, objectArray);
         }
 
         public void Write(object[] obj, params object[] objectArray)
@@ -150,7 +150,7 @@
 
         public void WriteLine(object obj, params object[] objectArray)
         {
-            Print(obj.ToString(), OperationMethod.WriteLine, objectArray);
+            Echo(obj.ToString(), OperationMethod.WriteLine, objectArray);
         }
 
         public void WriteLine()

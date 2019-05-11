@@ -1,4 +1,4 @@
-﻿namespace Konsole
+﻿namespace Kontext
 {
     using System;
     using System.Text.RegularExpressions;
@@ -6,7 +6,7 @@
 
     using static Static;
 
-    public partial class Kontext
+    public partial class Konsole
     {
         public class LogEntry
         {
@@ -20,7 +20,7 @@
                 Name = name;
                 Time = DateTime.Now;
                 Operation = operation;
-                Text = Regex.Replace(text, @"[\r\n]+", @"\n");
+                Text = Regex.Replace(text, @Environment.NewLine, @"\n");
             }
 
             public string ToString(string instance, bool truncate = false)

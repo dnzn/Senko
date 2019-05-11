@@ -4,15 +4,15 @@
     using System.Diagnostics;
     using System.Runtime.InteropServices;
     using System.Text.RegularExpressions;
-    using Konsole;
+    using Kontext;
 
     using static Fields;
 
     public static class Fields
     {
-        public static Kontext Kon = new Kontext(nameof(Kon));
+        public static Konsole Kon = new Konsole(nameof(Kon));
 
-        public readonly static Dictionary<string, int> Numbers = new Dictionary<string, int>
+        public readonly static Dictionary<string, int> Numerals = new Dictionary<string, int>
         {
             { "zero", 0 },
             { "one", 1 },
@@ -35,6 +35,14 @@
             { "for", 4 },
             { "ate", 8 },
         };
+
+        public enum Encapsulator
+        {
+            Parenthesis,
+            Brackets,
+            Braces,
+            Chevron
+        }
 
         public static Dictionary<char, char> Encapsulators { get; } = new Dictionary<char, char>
         {
@@ -74,7 +82,7 @@
             text = text.Trim().ToLower(); // Trim whitespaces and convert string to lower case
             string pattern = @"(\s{0}|{0}\s|\s{0}\s)"; // The pattern to use to Translate()
 
-            text = text.Translate(pattern, Numbers);
+            text = text.Translate(pattern, Numerals);
 
             if (processHomophones)
             {
@@ -112,6 +120,29 @@
             }
 
             return text;
+        }
+
+        public static string Encapsulate(this object obj, Encapsulator encapsulator)
+        {
+            string opening = "";
+
+            switch (encapsulator)
+            {
+                case Encapsulator.Parenthesis:
+                    opening = "(";
+                    break;
+                case Encapsulator.Brackets:
+                    opening = "[";
+                    break;
+                case Encapsulator.Braces:
+                    opening = "{";
+                    break;
+                case Encapsulator.Chevron:
+                    opening = "<";
+                    break;
+            }
+
+            return Encapsulate(obj, opening);
         }
 
         public static string Encapsulate(this object obj, object opening)

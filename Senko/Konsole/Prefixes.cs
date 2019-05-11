@@ -1,10 +1,10 @@
-﻿namespace Konsole
+﻿namespace Kontext
 {
     using System;
     using System.Text.RegularExpressions;
     using Global;
 
-    public partial class Kontext
+    public partial class Konsole
     {
         public Prefixes Prefix { get; private set; }
 
@@ -18,7 +18,7 @@
                 Auto
             }
 
-            Kontext This { get; set; }
+            Konsole This { get; set; }
             public bool Auto { get; set; } = true;
 
             Setting _current = Setting.Auto;
@@ -75,10 +75,10 @@
                 }
             }
 
-            public string Prompt { get; set; } = "KON > ";
+            public string Prompt { get; set; } = "KON// ";
             public string Indent { get { return new string(' ', Prompt.Length); } }
 
-            public Prefixes(Kontext instance)
+            public Prefixes(Konsole instance)
             {
                 This = instance;
             }
@@ -117,19 +117,30 @@
                 }
 
                 text = RemovePrefix(text);
+                text = NewLines.Flush(text);
 
                 switch (setting)
                 {
                     case Setting.Prompt:
-                        text = Regex.Replace("<prompt>" + Prompt + "</>" + text, @"[\r\n]+", Environment.NewLine + Indent + "</>");
+                        text = Regex.Replace(FormatText(Prompt, text, "<prompt>"), @Environment.NewLine, FormatInsert(Indent, @"$&"));
                         break;
                     case Setting.Indent:
-                        text = Regex.Replace(Indent + "</>" + text, @"[\r\n]+", Environment.NewLine + Indent + "</>");
+                        text = Regex.Replace(FormatText(Indent, text), @Environment.NewLine, FormatInsert(Indent, @"$&"));
                         break;
                 }
 
                 return text;
-            }         
+            }
+            
+            string FormatInsert(string prefix, string insert = "")
+            {
+                return FormatText(prefix, "", insert);
+            }
+
+            string FormatText(string prefix, string text, string insert = "")
+            {
+                return insert + prefix + "</>" + text;
+            }
         }
     }
 }

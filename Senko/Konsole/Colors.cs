@@ -1,11 +1,11 @@
-﻿namespace Konsole
+﻿namespace Kontext
 {
     using System;
     using System.Collections.Generic;
     using System.Text.RegularExpressions;
     using Global;
 
-    public partial class Kontext
+    public partial class Konsole
     {
         public Colors Color { get; private set; }
         
@@ -53,7 +53,7 @@
                 { "All", Enum.GetNames(typeof(ConsoleColor))}
             };
 
-            Kontext This { get; set; }
+            Konsole This { get; set; }
             public ConsoleColor Primary { get; set; } = ConsoleColor.White;
             public ConsoleColor Secondary { get; set; } = ConsoleColor.Gray;
             public ConsoleColor Prompt { get; set; } = ConsoleColor.DarkGray;
@@ -90,7 +90,7 @@
                 }
             }
 
-            public Colors(Kontext instance)
+            public Colors(Konsole instance)
             {
                 This = instance;
                 Console.ResetColor();
