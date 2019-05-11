@@ -7,11 +7,11 @@
 
     public partial class SonyDevice
     {
-        public Action.IRCode IRCode { get; private set; }
+        public Action.Command Command { get; private set; }
 
         public partial class Action
         {
-            public class IRCode
+            public class Command
             {
                 class Parsed
                 {
@@ -35,9 +35,9 @@
 
                 public bool SaveToJsonFile { get; set; } = true;
 
-                public Dictionary<string, string> Lexicon { get; private set; } = new Dictionary<string, string>();
+                public Dictionary<string, string> Code { get; private set; } = new Dictionary<string, string>();
 
-                public IRCode(SonyDevice instance, string file)
+                public Command(SonyDevice instance, string file)
                 {
                     This = instance;
 
@@ -51,7 +51,7 @@
 
                 bool Parse(string file)
                 {
-                    Lexicon = JsonConvert.DeserializeObject<Parsed>(file).ToDictionary();
+                    Code = JsonConvert.DeserializeObject<Parsed>(file).ToDictionary();
 
                     return true;
                 }

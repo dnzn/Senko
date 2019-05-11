@@ -46,6 +46,7 @@
             dev.Alias.Add("xbox", "action");
             
             Kon.WriteLine(dev.Info.Model);
+            Kon.WriteLine(dev.Command.Code["Hdmi1"]);
             
             while (true)
             {
@@ -63,7 +64,7 @@
 
             System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();
             FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
-            string version = fvi.FileVersion;
+            string version = fvi.ProductVersion;
 
             string[] asciiArray = new string[]
             {

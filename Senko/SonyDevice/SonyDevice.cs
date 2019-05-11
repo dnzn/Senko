@@ -30,7 +30,7 @@
         void Initialize()
         {
             Info = new Information(this, @"C:\Users\Danzen Binos\OneDrive\remo\hub.deviceinfo.json");
-            IRCode = new Action.IRCode(this, @"C:\Users\Danzen Binos\OneDrive\remo\hub.ircodelist.json");
+            Command = new Action.Command(this, @"C:\Users\Danzen Binos\OneDrive\remo\hub.ircodelist.json");
             Alias = new Action.Alias(this);
         }
         
