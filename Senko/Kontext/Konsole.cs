@@ -4,9 +4,8 @@
     using System.Collections.Generic;
     using Global;
 
-    using static Konsole;
     using static Static;
-    using static Konsole.Colors;
+    using static Konsole.Parameters.Color;
     using System.Text.RegularExpressions;
 
     public static class Static
@@ -42,9 +41,9 @@
         public Konsole(string instanceName)
         {
             Name = instanceName;
-            Color = new Colors(this);
-            Prefix = new Prefixes(this);
-            NewLine = new NewLines(this);
+            Color = new Parameters.Color(this);
+            Prefix = new Parameters.Prefix(this);
+            NewLine = new Parameters.NewLine(this);
             Console.CursorVisible = false;
 
             if (!Names.Contains(Name))
@@ -60,18 +59,18 @@
                 List<string> stringList = new List<string>();
                 ColorSplit ColorSplitter = new ColorSplit();
 
-                Prefixes.Setting prefix = Prefix.Current;
-                NewLines.Setting newline = (method == OperationMethod.Write) ? NewLine.Write : NewLine.WriteLine;
+                PrefixType prefix = Prefix.Current;
+                NewLineType newline = (method == OperationMethod.Write) ? NewLine.Write : NewLine.WriteLine;
 
                 foreach (object obj in objectArray)
                 {
                     if (stringList.Count == 0)
                     {
-                        if (obj is NewLines.Setting obj_newline)
+                        if (obj is NewLineType obj_newline)
                         {
                             newline = (method == OperationMethod.Write) ? NewLine.OverrideWrite = obj_newline : NewLine.OverrideWriteLine = obj_newline;
                         }
-                        else if (obj is Prefixes.Setting obj_prefix)
+                        else if (obj is PrefixType obj_prefix)
                         {
                             prefix = Prefix.Override = obj_prefix;
                             newline = (method == OperationMethod.Write) ? NewLine.OverrideWrite : NewLine.OverrideWriteLine;
@@ -115,7 +114,7 @@
 
                 if (prefix == Prefix.Current)
                 {
-                    if (CursorPosition == 0 || (CursorPosition > 0 && (newline == NewLines.Setting.Prepend || newline == NewLines.Setting.Both)))
+                    if (CursorPosition == 0 || (CursorPosition > 0 && (newline == NewLineType.Prepend || newline == NewLineType.Both)))
                     {
                         text = Prefix.Insert(text);
                     }

@@ -1,6 +1,9 @@
 ﻿namespace Senko
 {
+    using Newtonsoft.Json;
     using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
 
     public partial class SonyDevice
     {
@@ -10,13 +13,48 @@
         {
             public class IRCode
             {
-                SonyDevice _sd { get; set; }
+                class Parsed
+                {
+                    public Result[] result { get; set; }
+
+                    public class Result
+                    {
+                        public string name { get; set; }
+                        public string value { get; set; }
+                    }
+
+                    public Dictionary<string, string> ToDictionary()
+                    {
+                        return result.ToDictionary(x => x.name, x => x.value);
+                    }
+                }
+                
+                SonyDevice This { get; set; }
 
                 public bool AutoLoad { get; set; } = true;
 
                 public bool SaveToJsonFile { get; set; } = true;
 
-                Dictionary<string, string> _ircode = new Dictionary<string, string>();
+                public Dictionary<string, string> Lexicon { get; private set; } = new Dictionary<string, string>();
+
+                public IRCode(SonyDevice instance, string file)
+                {
+                    This = instance;
+
+                    if (File.Exists(file))
+                    {
+                        string json = File.ReadAllText(file);
+
+                        Parse(json);
+                    }
+                }
+
+                bool Parse(string file)
+                {
+                    Lexicon = JsonConvert.DeserializeObject<Parsed>(file).ToDictionary();
+
+                    return true;
+                }
             }
         }
     }

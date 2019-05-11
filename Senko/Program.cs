@@ -6,7 +6,6 @@
 
     using static Kontext.Konsole;
     using static Kontext.Static;
-    using static Kontext.Konsole.Colors;
     using static Global.Fields;
 
     class Program
@@ -22,7 +21,7 @@
             
             Kon.Write("The quick brown fox jumps over the lazy dog.\nAnd everyone lives happily ever after.", new ColorSplit(SplitMethod.Char, Palette.RandomAuto));
 
-            Kon.WriteLine("SPLIT\nTHIS\nINTO\n{0}.", Prefixes.Setting.Prompt, new ColorSplit(SplitMethod.Line, Palette.AutoMono), "LINES");
+            Kon.WriteLine("SPLIT\nTHIS\nINTO\n{0}.", PrefixType.Prompt, new ColorSplit(SplitMethod.Line, Palette.AutoMono), "LINES");
 
             Kon.WriteLine("A newline test...");
 
@@ -31,11 +30,11 @@
             Kon.Write("<random>Another test");
 
             //Kon.Color.ForceReset = false;
-            Kon.Prefix.Current = Prefixes.Setting.Indent;
+            Kon.Prefix.Current = PrefixType.Indent;
 
             Kon.Write("Last");
 
-            Kon.Prefix.Current = Prefixes.Setting.Auto;
+            Kon.Prefix.Current = PrefixType.Auto;
 
             Kon.WriteLine("This will be in the colors of the rainbow! Well, sort of...", new ColorSplit(SplitMethod.Word, Palette.RainbowWave));
 
@@ -101,14 +100,14 @@
 
             string ascii = asciiArray.Join(Environment.NewLine).ForceIndent(29);
 
-            Kon.Prefix.Current = Prefixes.Setting.None;
+            Kon.Prefix.Current = PrefixType.None;
             
-            Kon.WriteLine(ascii, NewLines.Setting.Both);
+            Kon.WriteLine(ascii, NewLineType.Both);
             Kon.WriteLine(new string('-', Console.WindowWidth) + Environment.NewLine);
-            Kon.WriteLine("SENKO (Project:REMO) | Remote Controller Interface\n<gray>Version: {0}", ConsoleColor.White, version);
+            Kon.WriteLine("SENKO | Remote Control\n<gray>Version: {0}", ConsoleColor.White, version);
             Kon.WriteLine(@"https://github.com/TsurugiDanzen/Senko" + Environment.NewLine, ConsoleColor.Gray);
 
-            Kon.Prefix.Current = Prefixes.Setting.Auto;
+            Kon.Prefix.Current = PrefixType.Auto;
 
             Kon.Color.Reset();
         }

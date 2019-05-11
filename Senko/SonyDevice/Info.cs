@@ -10,7 +10,7 @@
         public Information Info { get; private set; }
 
         public class Information
-        {
+        {            
             class Parsed
             {
                 public Result[] result { get; set; }
@@ -35,6 +35,8 @@
                 }
             }
 
+            SonyDevice This { get; set; }
+            
             public string Product { get; private set; }
             public string Region { get; private set; }
             public string Language { get; private set; }
@@ -48,6 +50,8 @@
 
             public Information(SonyDevice instance, string file)
             {
+                This = instance;
+
                 // This is temporary. This method will normally access the JSON stream direct from the device and not from a file
                 if (File.Exists(file))
                 {
