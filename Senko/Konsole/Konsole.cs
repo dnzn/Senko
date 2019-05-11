@@ -135,7 +135,7 @@
                 } 
             }
 
-            Console.ResetColor();
+            Color.Reset();
         }
 
         public void Write(object obj, params object[] objectArray)

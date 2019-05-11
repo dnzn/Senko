@@ -221,13 +221,20 @@
             return opening + text + closing;
         }
 
-        public static string Join(this object[] obj)
+        public static string Join(this object[] obj, string separator = null)
         {
             string text = "";
 
-            foreach (object o in obj)
+            for (int i = 0; i < obj.Length; i++)
             {
-                text += o.ToString();
+                if (i < obj.Length - 1 && separator != null)
+                {
+                    text += obj[i].ToString() + separator;
+                }
+                else
+                {
+                    text += obj[i].ToString();
+                }
             }
 
             return text;

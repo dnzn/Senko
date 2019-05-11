@@ -94,6 +94,7 @@
             {
                 This = instance;
                 Console.ResetColor();
+                Console.Clear();
                 Current = Primary;
                 Previous = Current;
             }

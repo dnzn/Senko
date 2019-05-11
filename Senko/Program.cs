@@ -66,36 +66,40 @@
             FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
             string version = fvi.FileVersion;
 
-            string ascii =
-                @"                      ,." + Environment.NewLine +
-                @"                 .*&@@@@# .#@@@%*" + Environment.NewLine +
-                @"                #@@%,.&@&@@@//@%," + Environment.NewLine +
-                @"             .%@@(,  ,@@@&/  ,@#," + Environment.NewLine +
-                @"           ,#@%/      ,*.    .&@@(." + Environment.NewLine +
-                @"          *@@#                 *#@@@/." + Environment.NewLine +
-                @"         ,@&(                     ,/&@@%" + Environment.NewLine +
-                @"        ,@%                 ,/%@@@&%/." + Environment.NewLine +
-                @"       *%@,               *@@@%*, ,/%&@@@@@@@@%#/." + Environment.NewLine +
-                @"       %@#               /&@,.*%&@@@%(*,...,,*#&@@%(" + Environment.NewLine +
-                @"      ,@@,               .(@@@@%#,               *@@%" + Environment.NewLine +
-                @"     ,#@%                                          *@%," + Environment.NewLine +
-                @"     ,%@%                                          ,@%," + Environment.NewLine +
-                @"      ,,.   ./%&@@@@@@@@@@@@@@@&%(,.             .%@@.  /*" + Environment.NewLine +
-                @"         ,%@@@%(,.          ..*#%&@@@&%(,,,.,,*#&@@%.  ,@@," + Environment.NewLine +
-                @"      .#&@&*,                       ,(#&@@@@@@@&%*      &@(" + Environment.NewLine +
-                @"    (@@%/                                               %@#" + Environment.NewLine +
-                @"  *%@#*                                                 &@(" + Environment.NewLine +
-                @" *@@/                                                  *@@," + Environment.NewLine +
-                @",@@&%#(,.                                             .@&(" + Environment.NewLine +
-                @",##%%&@@@#,                                         /&@*" + Environment.NewLine +
-                @"         /&@@(                                      (@@*" + Environment.NewLine +
-                @"            ,%@@#.                               .%@@*" + Environment.NewLine +
-                @"              ,/@@@/                           /#@@#" + Environment.NewLine +
-                @"                 /%@@&(.                   ./#@@&/" + Environment.NewLine +
-                @"                     .(&@@@@%#/*,,,,*(#%@@@@#/." + Environment.NewLine +
-                @"                         .,/%%&@@@@@&&%#*,." + Environment.NewLine;
+            string[] asciiArray = new string[]
+            {
+                @"                      ,.",
+                @"                 .*&@@@@# .#@@@%*",
+                @"                #@@%,.&@&@@@//@%,",
+                @"             .%@@(,  ,@@@&/  ,@#,",
+                @"           ,#@%/      ,*.    .&@@(.",
+                @"          *@@#                 *#@@@/.",
+                @"         ,@&(                     ,/&@@%",
+                @"        ,@%                 ,/%@@@&%/.",
+                @"       *%@,               *@@@%*, ,/%&@@@@@@@@%#/.",
+                @"       %@#               /&@,.*%&@@@%(*,...,,*#&@@%(",
+                @"      ,@@,               .(@@@@%#,               *@@%",
+                @"     ,#@%                                          *@%,",
+                @"     ,%@%                                          ,@%,",
+                @"      ,,.   ./%&@@@@@@@@@@@@@@@&%(,.             .%@@.  /*",
+                @"         ,%@@@%(,.          ..*#%&@@@&%(,,,.,,*#&@@%.  ,@@,",
+                @"      .#&@&*,                       ,(#&@@@@@@@&%*      &@(",
+                @"    (@@%/                                               %@#",
+                @"  *%@#*                                                 &@(",
+                @" *@@/                                                  *@@,",
+                @",@@&%#(,.                                             .@&(",
+                @",##%%&@@@#,                                         /&@*",
+                @"         /&@@(                                      (@@*",
+                @"            ,%@@#.                               .%@@*",
+                @"              ,/@@@/                           /#@@#",
+                @"                 /%@@&(.                   ./#@@&/",
+                @"                     .(&@@@@%#/*,,,,*(#%@@@@#/.",
+                @"                         .,/%%&@@@@@&&%#*,." + Environment.NewLine
+            };
 
-            ascii = ascii.ForceIndent(29);
+
+
+            string ascii = asciiArray.Join(Environment.NewLine).ForceIndent(29);
 
             Kon.Prefix.Current = Prefixes.Setting.None;
             
@@ -106,7 +110,7 @@
 
             Kon.Prefix.Current = Prefixes.Setting.Auto;
 
-            Console.ResetColor();
+            Kon.Color.Reset();
         }
 
         static void ParseCommand(string command)
