@@ -172,30 +172,32 @@
                 limitName = name;
             }
 
-            Console.WriteLine();
-            Console.WriteLine("LOG");
-            Console.WriteLine(new string('=', Console.WindowWidth - 2));
+            string log = "Konsole Log : " + limitName;
+            log = log.AppendLine(new string('=', Console.WindowWidth - 2));
 
             string lastDate = "";
 
-            foreach (LogEntry log in Log)
+            foreach (LogEntry entry in Log)
             {
-                string logDate = log.Time.ToString("MM/dd/yyyy");
+                string logDate = entry.Time.ToString("MM/dd/yyyy");
 
                 if (lastDate != logDate)
                 {
-                    Console.WriteLine(logDate);
-                    Console.WriteLine(new string('-', Console.WindowWidth - 2));
+                    log = log.AppendLine(logDate);
+                    log = log.AppendLine(new string('-', Console.WindowWidth - 2));
                     lastDate = logDate;
                 }
 
-                if (limitName == null || limitName == log.Name)
+                if (limitName == null || limitName == entry.Name)
                 {
-                    Console.WriteLine(log.ToString(limitName, truncate));
+                    log = log.AppendLine(entry.ToString(limitName, truncate));
                 }
             }
 
-            Console.WriteLine(new string('-', Console.WindowWidth - 2));
+            log = log.AppendLine(new string('-', Console.WindowWidth - 2));
+
+            Console.WriteLine();
+            Console.WriteLine(log);
         }
 
         public static void WriteLog(bool truncate = true)

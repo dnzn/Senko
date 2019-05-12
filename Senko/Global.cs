@@ -303,6 +303,11 @@
 
             return text;
         }
+
+        public static string AppendLine(this object obj, object append)
+        {
+            return obj.ToString() + Environment.NewLine + append.ToString();
+        }
     }
 
     public static class Methods

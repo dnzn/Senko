@@ -39,29 +39,34 @@
             Text = Regex.Replace(text, @Environment.NewLine, @"\n");
         }
 
-        public string ToString(string parent, bool truncate = false)
+        public string ToString(string instance, bool truncate = false)
         {
             int nameLength = 0;
+            int elapsedTimeLength = 0;
 
-            if (parent == null)
+            string operation = Operation.PadRight(9);
+            string elapsedTime = (Time - Start).TotalMilliseconds.ToString("0.#0ms").PadLeft(8);
+
+            if (instance == null)
             {
                 foreach (string n in Names)
                 {
                     nameLength = (n.Length > nameLength) ? n.Length : nameLength;
                 }
+
+                int l = 71 - nameLength;
+                string text = (truncate) ? (Text.Length <= l) ? Text : Text.Substring(0, l) + "[...]" : Text;
+                string name = Name.PadRight(nameLength);
+
+                return "{0} | {1} | {2} | {3} | {4}".Format(Time.ToString("HH:mm:ss:fff"), elapsedTime, name, operation, text);
             }
             else
             {
-                nameLength = parent.Length;
+                int l = 74;
+                string text = (truncate) ? (Text.Length <= l) ? Text : Text.Substring(0, l) + "[...]" : Text;
+
+                return "{0} | {1} | {2} | {3}".Format(Time.ToString("HH:mm:ss:fff"), elapsedTime, operation, text);
             }
-
-            string name = Name.PadRight(nameLength);
-            string operation = Operation.PadRight(9);
-            int l = 68;
-            string text = (truncate) ? (Text.Length <= l) ? Text : Text.Substring(0, l) + "[...]" : Text;
-            string elapsedTime = (Time - Start).TotalMilliseconds.ToString("0.#0ms").PadLeft(8);
-
-            return "{0} | {1} | {2} | {3} | {4}".Format(Time.ToString("HH:mm:ss:fff"), elapsedTime, name, operation, text);
         }
 
         public string ToString(bool truncate = false)

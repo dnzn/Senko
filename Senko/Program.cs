@@ -4,6 +4,7 @@
     using Global;
     using System.Diagnostics;
 
+    using static Kontext.Static;
     using static Kontext.Konsole;
     using static Kontext.Konsole.Parameters;
     using static Global.Fields;
@@ -21,7 +22,7 @@
             Kon.WriteLine(dev.Info.Model);
             Kon.WriteLine(dev.Command.Code["Hdmi1"].Compress());
 
-            WriteLog();
+            Kon.WriteLog();
             
             while (true)
             {
