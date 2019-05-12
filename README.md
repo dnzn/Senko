@@ -21,7 +21,7 @@ Basically, nothing much yet.
 
 First, I had to work on the way to display information in a clean and consistent way first. I created the Konsole class under the Kontext namespace to do that and it wraps around the System.Console class and make it easier to add colors, prefixes and such. It is a complete rewrite of a rudimentary version that I created with Remo, the earlier prototype of Senko. It is now on a different namespace because it may become a project of its own in the future. At the moment of writing, the Write and WriteLine methods seem to be feature complete.
 
-Some subclasses and methods under the SonyDevice class now works. It can now parse device information from a saved JSON file which should be trivial to modify to parse live JSON from the device itself once the REST subclass is working. Parsing of command aliases from a JSON or ALIAS file is now functional as well.
+Some subclasses and methods under the SonyDevice class now works. It can now parse device information from a saved JSON file which should be trivial to modify to parse live JSON from the device itself once the REST subclass is working. Parsing of commands and aliases from a JSON or ALIAS file is now functional as well.
 
 ## Future plans
 - Implement a config (*.konfig!) file system to store device information on so that the app will autoconfigure itself everytime it starts.
