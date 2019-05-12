@@ -11,22 +11,39 @@
     {
         public string Name { get; private set; }
         public DateTime Time { get; private set; }
-        public OperationMethod Operation { get; private set; }
+        public DateTime Start { get; private set; }
+        public string Operation { get; private set; }
         public string Text { get; private set; }
 
-        public LogEntry(string name, OperationMethod operation, string text)
+        public LogEntry(string name, DateTime start, OperationMethod operation, string text)
+        {
+            Init(name, start, operation, text);
+        }
+
+        public LogEntry(string name, DateTime start, string operation, string text)
+        {
+            Init(name, start, operation, text);
+        }
+
+        public LogEntry(string name, DateTime start, string text)
+        {
+            Init(name, start, "", text);
+        }
+
+        public void Init(string name, DateTime start, object operation, string text)
         {
             Name = name;
             Time = DateTime.Now;
-            Operation = operation;
+            Start = start;
+            Operation = operation.ToString();
             Text = Regex.Replace(text, @Environment.NewLine, @"\n");
         }
 
-        public string ToString(string instance, bool truncate = false)
+        public string ToString(string parent, bool truncate = false)
         {
             int nameLength = 0;
 
-            if (instance == null)
+            if (parent == null)
             {
                 foreach (string n in Names)
                 {
@@ -35,14 +52,16 @@
             }
             else
             {
-                nameLength = instance.Length;
+                nameLength = parent.Length;
             }
 
             string name = Name.PadRight(nameLength);
-            string operation = Operation.ToString().PadRight(9);
-            string text = (truncate) ? (Text.Length <= 70) ? Text : Text.Substring(0, 70) + "[...]" : Text;
+            string operation = Operation.PadRight(9);
+            int l = 68;
+            string text = (truncate) ? (Text.Length <= l) ? Text : Text.Substring(0, l) + "[...]" : Text;
+            string elapsedTime = (Time - Start).TotalMilliseconds.ToString("0.#0ms").PadLeft(8);
 
-            return "{0} | {1} | {2} | {3}".Format(Time.ToString("MM/dd/yy HH:mm:ss:fff"), name, operation, text);
+            return "{0} | {1} | {2} | {3} | {4}".Format(Time.ToString("HH:mm:ss:fff"), elapsedTime, name, operation, text);
         }
 
         public string ToString(bool truncate = false)

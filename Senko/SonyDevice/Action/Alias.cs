@@ -16,7 +16,7 @@
         {
             public class Alias
             {
-                SonyDevice _sd { get; set; }
+                SonyDevice Parent { get; set; }
 
                 public bool AutoLoad { get; set; } = true;
 
@@ -26,9 +26,9 @@
 
                 public int Count { get { return _alias.Count; } }
 
-                public Alias(SonyDevice instance, bool autoLoad = true)
+                public Alias(SonyDevice parent, bool autoLoad = true)
                 {
-                    _sd = instance;
+                    Parent = parent;
 
                     AutoLoad = autoLoad;
 
@@ -40,7 +40,7 @@
 
                 void AutoLoadFile()
                 {
-                    string defaultFile = _sd.DefaultFilePath + _sd.ID + ".alias";
+                    string defaultFile = Parent.DefaultFilePath + Parent.ID + ".alias";
                     string defaultJsonFile = defaultFile + ".json";
 
                     if (File.Exists(defaultJsonFile))
@@ -138,7 +138,7 @@
 
                         try
                         {
-                            File.WriteAllText(_sd.DefaultFilePath + _sd.ID + ".alias.json", json);
+                            File.WriteAllText(Parent.DefaultFilePath + Parent.ID + ".alias.json", json);
                         }
                         catch
                         {

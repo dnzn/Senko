@@ -55,10 +55,10 @@
                 { "All", Enum.GetNames(typeof(ConsoleColor))}
             };
 
-                Konsole This { get; set; }
+                Konsole Parent { get; set; }
                 public ConsoleColor Primary { get; set; } = ConsoleColor.White;
                 public ConsoleColor Secondary { get; set; } = ConsoleColor.Gray;
-                public ConsoleColor Prompt { get; set; } = ConsoleColor.DarkGray;
+                public ConsoleColor Prompt { get; set; } = ConsoleColor.DarkCyan;
                 public ConsoleColor Previous { get; private set; }
                 public bool ForceReset { get; set; } = true; // Reset the color every write when true. Previous color is inherited when false.
 
@@ -92,9 +92,9 @@
                     }
                 }
 
-                public Color(Konsole instance)
+                public Color(Konsole parent)
                 {
-                    This = instance;
+                    Parent = parent;
                     Console.ResetColor();
                     Console.Clear();
                     Current = Primary;
@@ -140,7 +140,7 @@
                 /// <param name="replace">The string to replace any matches.</param>
                 /// <param name="count">The number of tags to replace. It will replace all if 0.</param>
                 /// <returns>The modified string.</returns>
-                public static string ReplaceTag(string text, string replace, int count = 0)
+                public static string Recoat(string text, string replace, int count = 0)
                 {
                     int i = 0;
 
@@ -168,9 +168,9 @@
                 /// <param name="text">The string to modify.</param>
                 /// <param name="count">The number of tags to remove.</param>
                 /// <returns>The modified string.</returns>
-                public static string RemoveTag(string text, int count = 0)
+                public static string Shake(string text, int count = 0)
                 {
-                    return ReplaceTag(text, "", count);
+                    return Recoat(text, "", count);
                 }
 
                 /// <summary>
@@ -364,16 +364,16 @@
                     return GetPalette(palette, randomCount);
                 }
 
-                public static string InsertTag(string text, ConsoleColor color)
+                public static string Coat(string text, ConsoleColor color)
                 {
                     string tag = GetColor(color).Encapsulate("<");
 
-                    return tag + text;
+                    return tag + text + "</>";
                 }
 
-                public static string InsertTag(string text, string color)
+                public static string Coat(string text, string color)
                 {
-                    return InsertTag(text, GetColor(color));
+                    return Coat(text, GetColor(color));
                 }
 
                 public static int CountTags(string text)
@@ -411,7 +411,7 @@
                 /// <returns>A string array containing the split text.</returns>
                 public static string[] Split(string text)
                 {
-                    text = ReplaceTag(text, @"</>$&");
+                    text = Recoat(text, @"</>$&");
                     text = Regex.Replace(text, @"(</>){2,}", "</>");
 
                     return text.Split("</>", StringSplitOptions.RemoveEmptyEntries);
@@ -524,7 +524,7 @@
                     }
                     else
                     {
-                        if (This.Prefix.Current == PrefixType.Prompt || This.Prefix.Current == PrefixType.Indent)
+                        if (Parent.Prefix.Current == PrefixType.Prompt || Parent.Prefix.Current == PrefixType.Indent)
                         {
                             Toggle();
                         }
@@ -598,7 +598,7 @@
 
                             i = (randomSort) ? Randomize(paletteArray.Length, i) : i + 1;
 
-                            chunkArray[j] = InsertTag(chunkArray[j], color);
+                            chunkArray[j] = Coat(chunkArray[j], color);
                         }
                     }
 
@@ -615,14 +615,14 @@
                 /// <returns></returns>
                 public static string[] PaletteChunks(string text, Palette palette, int chunkSize, bool randomSort = false)
                 {
-                    text = RemoveTag(text);
+                    text = Shake(text);
 
                     return PaletteInsert(SplitChunks(text, chunkSize), palette, randomSort);
                 }
 
                 public static string[] PaletteChunks(string text, string[] paletteArray, int chunkSize, bool randomSort = false)
                 {
-                    text = RemoveTag(text);
+                    text = Shake(text);
 
                     return PaletteInsert(SplitChunks(text, chunkSize), paletteArray, randomSort);
                 }
@@ -636,14 +636,14 @@
                 /// <returns></returns>
                 public static string[] PaletteLines(string text, Palette palette, bool randomSort = false)
                 {
-                    text = RemoveTag(text);
+                    text = Shake(text);
 
                     return PaletteInsert(SplitLines(text), palette, randomSort);
                 }
 
                 public static string[] PaletteLines(string text, string[] paletteArray, bool randomSort = false)
                 {
-                    text = RemoveTag(text);
+                    text = Shake(text);
 
                     return PaletteInsert(SplitLines(text), paletteArray, randomSort);
                 }
@@ -657,14 +657,14 @@
                 /// <returns></returns>
                 public static string[] PaletteWords(string text, Palette palette, bool randomSort = false)
                 {
-                    text = RemoveTag(text);
+                    text = Shake(text);
 
                     return PaletteInsert(SplitWords(text), palette, randomSort);
                 }
 
                 public static string[] PaletteWords(string text, string[] paletteArray, bool randomSort = false)
                 {
-                    text = RemoveTag(text);
+                    text = Shake(text);
 
                     return PaletteInsert(SplitWords(text), paletteArray, randomSort);
                 }

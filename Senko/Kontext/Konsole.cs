@@ -54,6 +54,8 @@
 
         void Echo(string text, OperationMethod method, params object[] objectArray)
         {
+            DateTime start = DateTime.Now;
+
             if (method.ToString().Contains("Write"))
             {
                 List<string> stringList = new List<string>();
@@ -61,6 +63,7 @@
 
                 PrefixType prefix = Prefix.Current;
                 NewLineType newline = (method == OperationMethod.Write) ? NewLine.Write : NewLine.WriteLine;
+                ConsoleColor color = Color.Current;
 
                 foreach (object obj in objectArray)
                 {
@@ -77,21 +80,7 @@
                         }
                         else if (obj is ConsoleColor obj_color)
                         {
-                            if (!ContainsTag(text))
-                            {
-                                text = InsertTag(text, obj_color);
-                            }
-                            else
-                            {
-                                if (StartsWithTag(text))
-                                {
-                                    text = ReplaceTag(text, GetColor(obj_color).Encapsulate("<"), 1);
-                                }
-                                else
-                                {
-                                    text = InsertTag(text, obj_color);
-                                }
-                            }
+                            color = obj_color;
                         }
                         else if (obj is ColorSplit obj_splitParameters)
                         {
@@ -107,7 +96,6 @@
                         stringList.Add(obj.ToString());
                     }
                 }
-
                 text = text.Format(stringList.ToArray());
 
                 text = ColorSplitter.Execute(text);
@@ -126,11 +114,29 @@
 
                 text = NewLine.Insert(text, newline);
 
-                Log.Add(new LogEntry(Name, method, text));
+                bool first = true;
 
-                foreach (string colorSplit in Split(text))
+                foreach (string s in Split(text))
                 {
-                    Console.Write(Color.Paint(colorSplit));
+                    string t = s;
+
+                    if (color != Color.Current && !StartsWithTag(t))
+                    {
+                        t = GetColor(color).Encapsulate("<") + t;
+                    }
+
+                    Console.Write(Color.Paint(t));
+
+                    if (first)
+                    {
+                        Log.Add(new LogEntry(Name, start, method, t));
+                    }
+                    else
+                    {
+                        Log.Add(new LogEntry(Name, start, t));
+                    }
+
+                    first = false;
                 } 
             }
 
@@ -166,13 +172,30 @@
                 limitName = name;
             }
 
+            Console.WriteLine();
+            Console.WriteLine("LOG");
+            Console.WriteLine(new string('=', Console.WindowWidth - 2));
+
+            string lastDate = "";
+
             foreach (LogEntry log in Log)
             {
+                string logDate = log.Time.ToString("MM/dd/yyyy");
+
+                if (lastDate != logDate)
+                {
+                    Console.WriteLine(logDate);
+                    Console.WriteLine(new string('-', Console.WindowWidth - 2));
+                    lastDate = logDate;
+                }
+
                 if (limitName == null || limitName == log.Name)
                 {
                     Console.WriteLine(log.ToString(limitName, truncate));
                 }
             }
+
+            Console.WriteLine(new string('-', Console.WindowWidth - 2));
         }
 
         public static void WriteLog(bool truncate = true)
@@ -186,14 +209,9 @@
             public Palette Palette { get; private set; }
             public int ChunkSize { get; private set; }
 
-            public ColorSplit(SplitMethod method, Palette? palette, int chunkSize)
+            public ColorSplit(SplitMethod method, Palette? palette, int chunkSize = 0)
             {
                 SetParameters(method, palette, chunkSize);
-            }
-
-            public ColorSplit(SplitMethod method, Palette palette)
-            {
-                SetParameters(method, palette);
             }
 
             public ColorSplit(SplitMethod method)

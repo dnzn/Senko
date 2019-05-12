@@ -29,7 +29,7 @@
                     }
                 }
                 
-                SonyDevice This { get; set; }
+                SonyDevice Parent { get; set; }
 
                 public bool AutoLoad { get; set; } = true;
 
@@ -37,9 +37,9 @@
 
                 public Dictionary<string, string> Code { get; private set; } = new Dictionary<string, string>();
 
-                public Command(SonyDevice instance, string file)
+                public Command(SonyDevice parent, string file)
                 {
-                    This = instance;
+                    Parent = parent;
 
                     if (File.Exists(file))
                     {

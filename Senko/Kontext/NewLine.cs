@@ -19,7 +19,7 @@
         {
             public class NewLine
             {
-                Konsole This { get; set; }
+                Konsole Parent { get; set; }
                 public NewLineType Former { get; set; } = NewLineType.None;
 
                 NewLineType _write { get; set; } = NewLineType.None;
@@ -57,9 +57,9 @@
                     set { _override = value; }
                 }
 
-                public NewLine(Konsole instance)
+                public NewLine(Konsole parent)
                 {
-                    This = instance;
+                    Parent = parent;
                 }
 
                 NewLineType ToWriteLine(NewLineType setting)

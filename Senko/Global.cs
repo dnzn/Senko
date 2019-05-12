@@ -1,5 +1,6 @@
 ﻿namespace Global
 {
+    using System;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Runtime.InteropServices;
@@ -102,6 +103,57 @@
             for (int i = 0; i < args.Length; i++)
             {
                 text = Regex.Replace(text, i.Encapsulate(@"(\{"), args[i].ToString());
+            }
+
+            return text;
+        }
+
+        public static string Compress(this string text)
+        {
+            MatchCollection matchCollection = Regex.Matches(text, @"([\w\W])\1{3,}");
+
+            foreach(Match match in matchCollection)
+            {
+                char c = match.Value[0];
+                int i = match.Value.Length;
+                string compressed;
+
+                if (c == ' ')
+                {
+                    compressed = "@" + i + "#";
+                }
+                else
+                {
+                    compressed = "&" + i + c;
+                }
+
+                text = Regex.Replace(text, match.Value, compressed);
+            }
+
+            return text;
+        }
+
+        public static string Decompress(this string text)
+        {
+            MatchCollection matchCollection2 = Regex.Matches(text, @"(@(\d+)[#])|(&(\d+)([\w\W]))");
+
+            foreach(Match match in matchCollection2)
+            {
+                char c;
+                int i;
+
+                if (match.Value.StartsWith("@"))
+                {
+                    c = ' ';
+                    i = Int32.Parse(match.Groups[2].Value);
+                }
+                else
+                {
+                    c = match.Groups[5].Value[0];
+                    i = Int32.Parse(match.Groups[4].Value);
+                }
+
+                text = text.Replace(match.Value, new string(c, i));
             }
 
             return text;
@@ -235,6 +287,18 @@
                 {
                     text += obj[i].ToString();
                 }
+            }
+
+            return text;
+        }
+
+        public static string Join(this object obj, params object[] objArray)
+        {
+            string text = obj.ToString();
+
+            foreach(object o in objArray)
+            {
+                text += o.ToString();
             }
 
             return text;

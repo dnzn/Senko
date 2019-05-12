@@ -5,8 +5,9 @@
     using System.Diagnostics;
 
     using static Kontext.Konsole;
-    using static Kontext.Static;
+    using static Kontext.Konsole.Parameters;
     using static Global.Fields;
+    using static Global.Extensions;
 
     class Program
     {
@@ -14,39 +15,13 @@
         {
             Welcome();
 
-            //Kon.PromptColor = ConsoleColor.DarkGray;
-            //Kon.PrimaryColor = ConsoleColor.Gray;
-
-            Kon.WriteLine("<cyan>Hello World!\n<yellow>Let's test a newline.\nThis has no color tag.\n<green>Everything is working, so far.");
-            
-            Kon.Write("The quick brown fox jumps over the lazy dog.\nAnd everyone lives happily ever after.", new ColorSplit(SplitMethod.Char, Palette.RandomAuto));
-
-            Kon.WriteLine("SPLIT\nTHIS\nINTO\n{0}.", PrefixType.Prompt, new ColorSplit(SplitMethod.Line, Palette.AutoMono), "LINES");
-
-            Kon.WriteLine("A newline test...");
-
-            Kon.Write("Test");
-
-            Kon.Write("<random>Another test");
-
-            //Kon.Color.ForceReset = false;
-            Kon.Prefix.Current = PrefixType.Indent;
-
-            Kon.Write("Last");
-
-            Kon.Prefix.Current = PrefixType.Auto;
-
-            Kon.WriteLine("This will be in the colors of the rainbow! Well, sort of...", new ColorSplit(SplitMethod.Word, Palette.RainbowWave));
-
-            Kon.WriteLine();
-
-            WriteLog();
-
             SonyDevice dev = new SonyDevice("hub");
             dev.Alias.Add("xbox", "action");
             
             Kon.WriteLine(dev.Info.Model);
-            Kon.WriteLine(dev.Command.Code["Hdmi1"]);
+            Kon.WriteLine(dev.Command.Code["Hdmi1"].Compress());
+
+            WriteLog();
             
             while (true)
             {
@@ -62,53 +37,46 @@
             // The project has been renamed to Senko, after the helpful fox in the anime "Sewayaki Kitsune no Senko-san"
             // Senko is also acronym for "SENd KOmmand".
 
+            string title = Color.Coat("SENKO | Remote Control", ConsoleColor.Cyan);
             System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();
             FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
-            string version = fvi.ProductVersion;
+            string version = "Version: " + fvi.ProductVersion;
+            int l = 43 - version.Length;
+            version = Color.Coat(version.Join("@", l, "#"), ConsoleColor.Gray);
+            string github = Color.Coat(@"https://github.com/TsurugiDanzen/Senko", ConsoleColor.Gray);
 
-            string[] asciiArray = new string[]
+            string ascii = new string[]
             {
-                @"                      ,.",
-                @"                 .*&@@@@# .#@@@%*",
-                @"                #@@%,.&@&@@@//@%,",
-                @"             .%@@(,  ,@@@&/  ,@#,",
-                @"           ,#@%/      ,*.    .&@@(.",
-                @"          *@@#                 *#@@@/.",
-                @"         ,@&(                     ,/&@@%",
-                @"        ,@%                 ,/%@@@&%/.",
-                @"       *%@,               *@@@%*, ,/%&@@@@@@@@%#/.",
-                @"       %@#               /&@,.*%&@@@%(*,...,,*#&@@%(",
-                @"      ,@@,               .(@@@@%#,               *@@%",
-                @"     ,#@%                                          *@%,",
-                @"     ,%@%                                          ,@%,",
-                @"      ,,.   ./%&@@@@@@@@@@@@@@@&%(,.             .%@@.  /*",
-                @"         ,%@@@%(,.          ..*#%&@@@&%(,,,.,,*#&@@%.  ,@@,",
-                @"      .#&@&*,                       ,(#&@@@@@@@&%*      &@(",
-                @"    (@@%/                                               %@#",
-                @"  *%@#*                                                 &@(",
-                @" *@@/                                                  *@@,",
-                @",@@&%#(,.                                             .@&(",
-                @",##%%&@@@#,                                         /&@*",
-                @"         /&@@(                                      (@@*",
-                @"            ,%@@#.                               .%@@*",
-                @"              ,/@@@/                           /#@@#",
-                @"                 /%@@&(.                   ./#@@&/",
-                @"                     .(&@@@@%#/*,,,,*(#%@@@@#/.",
-                @"                         .,/%%&@@@@@&&%#*,." + Environment.NewLine
-            };
+                @"@22#,.",
+                @"@17#.*&&4@# .#@@@%*",
+                @"@16##@@%,.&@&@@@//@%,",
+                @"@13#.%@@(,  ,@@@&/  ,@#,",
+                @"@11#,#@%/@6#,*.@4#.&@@(.@15#",
+                @"@10#*@@#@17#*#@@@/.",
+                @"@9#,@&(@21#,/&@@%",
+                @"@8#,@%@17#,/%@@@&%/.",
+                @"@7#*%@,@15#*@@@%*, ,/%&&8@}%#/.",
+                @"@7#%@#@15#/&@,.*%&@@@%(*,...,,*#&@@%(",
+                @"@6#,@@,@15#.(&4@%#,@15#*@@%",
+                @"@5#,#@%@42#*@%,",
+                @"@5#,%@%@42#,@%,",
+                @"@6#,,.   ./%&&15@&%(,.@13#.%@@.  /*",
+                @"@9#,%@@@%(,.@10#..*#%&@@@&%(,,,.,,*#&@@%.  ,@@,",
+                @"@6#.#&@&*,@23#,(#&&7@&%*@6#&@(",
+                @"@4#(@@%/@47#%@#",
+                @"  *%@#*@5#{0}@22#&@(",
+                @" *@@/@7#{1}*@@,",
+                @",@@&%#(,.   {2}@4#.@&(",
+                @",##%%&@@@#,@42#/&@*",
+                @"@9#/&@@(@38#(@@*",
+                @"@12#,%@@#.@31#.%@@*",
+                @"@14#,/@@@/@27#/#@@#",
+                @"@17#/%@@&(.@19#./#@@&/",
+                @"@21#.(&&4@%#/*&4,*(#%&4@#/.",
+                @"@25#.,/%%&&5&&%#*,." + Environment.NewLine
+            }.Join(Environment.NewLine);
 
-
-
-            string ascii = asciiArray.Join(Environment.NewLine).ForceIndent(29);
-
-            Kon.Prefix.Current = PrefixType.None;
-            
-            Kon.WriteLine(ascii, NewLineType.Both);
-            Kon.WriteLine(new string('-', Console.WindowWidth) + Environment.NewLine);
-            Kon.WriteLine("SENKO | Remote Control\n<gray>Version: {0}", ConsoleColor.White, version);
-            Kon.WriteLine(@"https://github.com/TsurugiDanzen/Senko" + Environment.NewLine, ConsoleColor.Gray);
-
-            Kon.Prefix.Current = PrefixType.Auto;
+            Kon.WriteLine(ascii.Decompress(), NewLineType.Both, ConsoleColor.DarkGray, PrefixType.None, title, version.Decompress(), github);
 
             Kon.Color.Reset();
         }

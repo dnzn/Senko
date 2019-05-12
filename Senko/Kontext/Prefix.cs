@@ -20,7 +20,7 @@
         {
             public class Prefix
             {
-                Konsole This { get; set; }
+                Konsole Parent { get; set; }
                 public bool Auto { get; set; } = true;
 
                 PrefixType _current = PrefixType.Auto;
@@ -40,7 +40,7 @@
                             _current = PrefixType.Auto;
                             _previous = _actual;
                             _actual = PrefixType.Prompt;
-                            This.NewLine.Write = NewLineType.Prepend;
+                            Parent.NewLine.Write = NewLineType.Prepend;
                         }
                         else
                         {
@@ -51,7 +51,7 @@
 
                             if (value != PrefixType.None)
                             {
-                                This.NewLine.Write = NewLineType.Prepend;
+                                Parent.NewLine.Write = NewLineType.Prepend;
                             }
                         }
                     }
@@ -72,7 +72,7 @@
 
                         if (!value.Is(PrefixType.Auto, PrefixType.None))
                         {
-                            This.NewLine.OverrideWrite = NewLineType.Prepend;
+                            Parent.NewLine.OverrideWrite = NewLineType.Prepend;
                         }
                     }
                 }
@@ -80,9 +80,9 @@
                 public string Prompt { get; set; } = "KON> ";
                 public string Indent { get { return new string(' ', Prompt.Length); } }
 
-                public Prefix(Konsole instance)
+                public Prefix(Konsole parent)
                 {
-                    This = instance;
+                    Parent = parent;
                 }
 
                 public PrefixType GetEmbeddedPrefix(string text)

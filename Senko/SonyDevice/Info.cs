@@ -35,7 +35,7 @@
                 }
             }
 
-            SonyDevice This { get; set; }
+            SonyDevice Parent { get; set; }
             
             public string Product { get; private set; }
             public string Region { get; private set; }
@@ -48,9 +48,9 @@
             public string Area { get; private set; }
             public string CID { get; private set; }
 
-            public Information(SonyDevice instance, string file)
+            public Information(SonyDevice parent, string file)
             {
-                This = instance;
+                Parent = parent;
 
                 // This is temporary. This method will normally access the JSON stream direct from the device and not from a file
                 if (File.Exists(file))
