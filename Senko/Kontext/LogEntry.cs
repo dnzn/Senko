@@ -2,7 +2,7 @@
 {
     using System;
     using System.Text.RegularExpressions;
-    using Global;
+    using Generic;
 
     using static Static;
     using static Konsole;
@@ -12,6 +12,7 @@
         public string Name { get; private set; }
         public DateTime Time { get; private set; }
         public DateTime Start { get; private set; }
+        public string ElapsedTime { get { return (Time - Start).TotalMilliseconds.ToString("0.#0ms"); } }
         public string Operation { get; private set; }
         public string Text { get; private set; }
 
@@ -42,10 +43,9 @@
         public string ToString(string instance, bool truncate = false)
         {
             int nameLength = 0;
-            int elapsedTimeLength = 0;
 
             string operation = Operation.PadRight(9);
-            string elapsedTime = (Time - Start).TotalMilliseconds.ToString("0.#0ms").PadLeft(8);
+            string elapsedTime = ElapsedTime.PadLeft(8);
 
             if (instance == null)
             {
@@ -54,18 +54,13 @@
                     nameLength = (n.Length > nameLength) ? n.Length : nameLength;
                 }
 
-                int l = 71 - nameLength;
-                string text = (truncate) ? (Text.Length <= l) ? Text : Text.Substring(0, l) + "[...]" : Text;
                 string name = Name.PadRight(nameLength);
 
-                return "{0} | {1} | {2} | {3} | {4}".Format(Time.ToString("HH:mm:ss:fff"), elapsedTime, name, operation, text);
+                return "{0} | {1} | {2} | {3} | {4}".Format(Time.ToString("HH:mm:ss:fff"), elapsedTime, name, operation, Text);
             }
             else
             {
-                int l = 74;
-                string text = (truncate) ? (Text.Length <= l) ? Text : Text.Substring(0, l) + "[...]" : Text;
-
-                return "{0} | {1} | {2} | {3}".Format(Time.ToString("HH:mm:ss:fff"), elapsedTime, operation, text);
+                return "{0} | {1} | {2} | {3}".Format(Time.ToString("HH:mm:ss:fff"), elapsedTime, operation, Text);
             }
         }
 

@@ -1,14 +1,13 @@
 ﻿namespace Senko
 {
     using System;
-    using Global;
     using System.Diagnostics;
+    using Generic;
 
-    using static Kontext.Static;
     using static Kontext.Konsole;
     using static Kontext.Konsole.Parameters;
-    using static Global.Fields;
-    using static Global.Extensions;
+    using static Generic.Fields;
+    using static Generic.Extensions;
 
     class Program
     {
@@ -20,10 +19,10 @@
             dev.Alias.Add("xbox", "action");
             
             Kon.WriteLine(dev.Info.Model);
-            Kon.WriteLine(dev.Command.Code["Hdmi1"].Compress());
+            Kon.WriteLine(dev.Command.Code["Hdmi1"]);
 
-            Kon.WriteLog();
-            
+            WriteLog();
+
             while (true)
             {
                 //string read = Kon.ReadLine();
@@ -38,13 +37,13 @@
             // The project has been renamed to Senko, after the helpful fox in the anime "Sewayaki Kitsune no Senko-san"
             // Senko is also acronym for "SENd KOmmand".
 
-            string title = Color.Coat("SENKO | Remote Control", ConsoleColor.Cyan);
+            string title = Color.InsertTag("PROJECT:SENKO | Remote Control", ConsoleColor.Cyan);
             System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();
             FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
             string version = "Version: " + fvi.ProductVersion;
             int l = 43 - version.Length;
-            version = Color.Coat(version.Join("@", l, "#"), ConsoleColor.Gray);
-            string github = Color.Coat(@"https://github.com/TsurugiDanzen/Senko", ConsoleColor.Gray);
+            version = Color.InsertTag(version.Join("@", l, "#"), ConsoleColor.White);
+            string github = Color.InsertTag(@"https://github.com/TsurugiDanzen/Senko", ConsoleColor.White);
 
             string ascii = new string[]
             {
@@ -65,19 +64,21 @@
                 @"@9#,%@@@%(,.@10#..*#%&@@@&%(,,,.,,*#&@@%.  ,@@,",
                 @"@6#.#&@&*,@23#,(#&&7@&%*@6#&@(",
                 @"@4#(@@%/@47#%@#",
-                @"  *%@#*@5#{0}@22#&@(",
+                @"  *%@#*@5#{0}@14#&@(",
                 @" *@@/@7#{1}*@@,",
                 @",@@&%#(,.   {2}@4#.@&(",
                 @",##%%&@@@#,@42#/&@*",
-                @"@9#/&@@(@38#(@@*",
-                @"@12#,%@@#.@31#.%@@*",
-                @"@14#,/@@@/@27#/#@@#",
-                @"@17#/%@@&(.@19#./#@@&/",
-                @"@21#.(&&4@%#/*&4,*(#%&4@#/.",
-                @"@25#.,/%%&&5&&%#*,." + Environment.NewLine
+                Color.InsertTag(new string('#', Console.WindowWidth - 1), ConsoleColor.DarkGray) + Environment.NewLine
+                //@"@9#/&@@(@38#(@@*",
+                //@"@12#,%@@#.@31#.%@@*",
+                //@"@14#,/@@@/@27#/#@@#",
+                //@"@17#/%@@&(.@19#./#@@&/",
+                //@"@21#.(&&4@%#/*&4,*(#%&4@#/.",
+                //@"@25#.,/%%&&5&&%#*,." + Environment.NewLine
             }.Join(Environment.NewLine);
 
-            Kon.WriteLine(ascii.Decompress(), NewLineType.Both, ConsoleColor.DarkGray, PrefixType.None, title, version.Decompress(), github);
+            Kon.WriteLine(ascii.Decompress(), NewLineType.Both, ConsoleColor.Gray, PrefixType.None, title, version.Decompress(), github);
+            Kon.WriteLine();
 
             Kon.Color.Reset();
         }

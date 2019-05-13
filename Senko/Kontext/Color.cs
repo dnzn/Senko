@@ -3,7 +3,9 @@
     using System;
     using System.Collections.Generic;
     using System.Text.RegularExpressions;
-    using Global;
+    using Generic;
+
+    using static Generic.Methods;
 
     public partial class Konsole
     {
@@ -59,10 +61,10 @@
                 public ConsoleColor Primary { get; set; } = ConsoleColor.White;
                 public ConsoleColor Secondary { get; set; } = ConsoleColor.Gray;
                 public ConsoleColor Prompt { get; set; } = ConsoleColor.DarkCyan;
-                public ConsoleColor Previous { get; private set; }
+                public static ConsoleColor Previous { get; private set; }
                 public bool ForceReset { get; set; } = true; // Reset the color every write when true. Previous color is inherited when false.
 
-                public ConsoleColor Current
+                public static ConsoleColor Current
                 {
                     get { return Console.ForegroundColor; }
                     set
@@ -102,110 +104,32 @@
                 }
 
                 /// <summary>
-                /// Randomize a number from zero to max.
+                /// Toggles the Current color with the specified color
                 /// </summary>
-                /// <param name="max">The maximum value.</param>
-                /// <param name="original">An optional value to avoid.</param>
-                /// <returns>Returns an int within the specified range that is not equals to the original value.</returns>
-                static int Randomize(int max, int original = -1)
+                /// <param name="color">The color to toggle to. It will set to Former if null.</param>
+                public void Toggle(ConsoleColor? color = null)
                 {
-                    Random rnd = new Random();
-                    int i = rnd.Next(max);
+                    Current = color ?? Previous;
+                }
 
-                    if (original > -1)
+                /// <summary>
+                /// Switch Current color between Primary and Secondary colors or set to Primary if Current is not any of the two.
+                /// </summary>
+                public void Switch()
+                {
+                    if (Current == Primary)
                     {
-                        while (i == original)
-                        {
-                            i = rnd.Next(max);
-                        }
+                        Current = Secondary;
                     }
-
-                    return i;
-                }
-
-                /// <summary>
-                /// Check if a string starts with or is a tag.
-                /// </summary>
-                /// <param name="text">The string to check</param>
-                /// <returns>True if a tag is found</returns>
-                public static bool StartsWithTag(string text)
-                {
-                    return (Exists(Regex.Match(text, @"^<(\w+)>").Groups[1].Value) || Regex.Match(text, @"^<prompt>").Success) ? true : false;
-                }
-
-                /// <summary>
-                /// Replace a tag with a new string.
-                /// </summary>
-                /// <param name="text">The string to modify.</param>
-                /// <param name="replace">The string to replace any matches.</param>
-                /// <param name="count">The number of tags to replace. It will replace all if 0.</param>
-                /// <returns>The modified string.</returns>
-                public static string Recoat(string text, string replace, int count = 0)
-                {
-                    int i = 0;
-
-                    foreach (Match m in Regex.Matches(text, @"<\w+>"))
+                    else
                     {
-                        if (StartsWithTag(m.Value))
-                        {
-                            text = Regex.Replace(text, m.Value, replace);
-                        }
-
-                        i++;
-
-                        if (count > 0 && i == count)
-                        {
-                            break;
-                        }
+                        Current = Primary;
                     }
-
-                    return text;
                 }
 
-                /// <summary>
-                /// An extension to the ReplaceTag method specifically for removing tags, instead.
-                /// </summary>
-                /// <param name="text">The string to modify.</param>
-                /// <param name="count">The number of tags to remove.</param>
-                /// <returns>The modified string.</returns>
-                public static string Shake(string text, int count = 0)
+                public void Reset()
                 {
-                    return Recoat(text, "", count);
-                }
-
-                /// <summary>
-                /// Convert a Palette to a ConsoleColor array.
-                /// </summary>
-                /// <param name="palette">The Palette to convert.</param>
-                /// <returns>A ConsoleColor array</returns>
-                static ConsoleColor[] ConvertPalette(Palette palette)
-                {
-                    string[] paletteArray = GetPalette(palette);
-                    ConsoleColor[] colorArray = new ConsoleColor[paletteArray.Length];
-
-                    for (int i = 0; i < paletteArray.Length; i++)
-                    {
-                        colorArray[i] = GetColor(paletteArray[i]);
-                    }
-
-                    return colorArray;
-                }
-
-                /// <summary>
-                /// Returns a random ConsoleColor
-                /// </summary>
-                /// <returns>A random ConsoleColor</returns>
-                public static ConsoleColor RandomColor(Palette palette = Palette.All)
-                {
-                    ConsoleColor[] colorArray = ConvertPalette(palette);
-                    int r = Randomize(colorArray.Length);
-
-                    while (colorArray[r] == Console.ForegroundColor || colorArray[r] == Console.BackgroundColor)
-                    {
-                        r = Randomize(colorArray.Length);
-                    }
-
-                    return colorArray[r];
+                    Toggle(Primary);
                 }
 
                 /// <summary>
@@ -218,6 +142,42 @@
                     foreach (string consolecolor in Palettes["All"])
                     {
                         if (color.ToLower() == consolecolor.ToLower())
+                        {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                }
+
+                /// <summary>
+                /// Check if a string starts with or is a tag.
+                /// </summary>
+                /// <param name="text">The string to check</param>
+                /// <returns>True if a tag is found</returns>
+                public static bool StartsWithTag(string text)
+                {
+                    return (Exists(Regex.Match(text, @"^<(\w+)>").Groups[1].Value) || Regex.Match(text, @"^<prompt>").Success) ? true : false;
+                }
+
+                public static bool ContainsTag(string text)
+                {
+                    foreach (Match m in Regex.Matches(text, @"<\w+>"))
+                    {
+                        if (StartsWithTag(m.Value))
+                        {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                }
+
+                static bool BackgroundIsDark()
+                {
+                    foreach (string color in Palettes["Dark"])
+                    {
+                        if (GetColor(color) == Console.BackgroundColor)
                         {
                             return true;
                         }
@@ -251,6 +211,216 @@
                     {
                         return Console.ForegroundColor;
                     }
+                }
+
+                public static string InsertTag(string text, ConsoleColor color, bool addBreakTag = true)
+                {
+                    string tag = GetColor(color).Encapsulate("<");
+                    string breakTag = "</>";
+
+                    if (!addBreakTag)
+                    {
+                        breakTag = "";
+                    }
+
+                    return tag + text + breakTag;
+                }
+
+                public static string InsertTag(string text, string color, bool addBreakTag = true)
+                {
+                    return InsertTag(text, GetColor(color), addBreakTag);
+                }
+
+                /// <summary>
+                /// Replace a tag with a new string.
+                /// </summary>
+                /// <param name="text">The string to modify.</param>
+                /// <param name="replace">The string to replace any matches.</param>
+                /// <param name="count">The number of tags to replace. It will replace all if 0.</param>
+                /// <returns>The modified string.</returns>
+                public static string ReplaceTags(string text, string replace, int count = 0)
+                {
+                    int i = 0;
+
+                    foreach (Match m in Regex.Matches(text, @"<\w+>"))
+                    {
+                        if (StartsWithTag(m.Value))
+                        {
+                            text = Regex.Replace(text, m.Value, replace);
+                        }
+
+                        i++;
+
+                        if (count > 0 && i == count)
+                        {
+                            break;
+                        }
+                    }
+
+                    return text;
+                }
+
+                public static string CleanTags(string text, int count = 0)
+                {
+                    text = Regex.Replace(text, @"<\w+>", "");
+                    return Regex.Replace(text, @"<\\(\w+>)", "<$1");
+                }
+
+                public static string DisableTags(string text)
+                {
+                    text = Regex.Replace(text, @"<\\(\w+>)", @"<\\$1");
+                    return Regex.Replace(text, @"<(\w+>)", @"<\$1");
+                }
+
+                public static string EnableTags(string text)
+                {
+                    text = Regex.Replace(text, @"<\\(\w+>)", @"<$1");
+                    return Regex.Replace(text, @"<\\(\\\w+>)", @"<$1");
+                }
+
+                public static int CountTags(string text)
+                {
+                    int count = 0;
+
+                    foreach (Match m in Regex.Matches(text, @"<\w+>"))
+                    {
+                        if (StartsWithTag(m.Value))
+                        {
+                            count++;
+                        }
+                    }
+
+                    return count;
+                }
+
+                /// <summary>
+                /// Split the text before any confirmed color tag &lt;color&gt; or at the end tag &lt;\&gt; so that it can be processed by the Paint method.
+                /// </summary>
+                /// <param name="text">The string to split</param>
+                /// <returns>A string array containing the split text.</returns>
+                public static string[] Split(string text)
+                {
+                    text = ReplaceTags(text, @"</>$&");
+                    text = Regex.Replace(text, @"(</>){2,}", "</>");
+
+                    return text.Split("</>", StringSplitOptions.RemoveEmptyEntries);
+                }
+
+                /// <summary>
+                /// Split a string into chunks of a specific number of characters.
+                /// </summary>
+                /// <param name="text">The text to split.</param>
+                /// <param name="chunkSize">The size of the chunk.</param>
+                /// <param name="countWhitespace">If true, whitespaces will be counted as characters.</param>
+                /// <returns>A string array.</returns>
+                public static string[] SplitChunks(string text, int chunkSize, bool countWhitespace = false)
+                {
+                    List<string> list = new List<string>();
+                    int i = 0;
+
+                    while (i < text.Length)
+                    {
+                        string chunk = "";
+
+                        for (int j = 0; j < chunkSize; j++)
+                        {
+                            if (i < text.Length)
+                            {
+                                while (!countWhitespace && i < text.Length && Regex.Match(text[i].ToString(), @"\s").Success)
+                                {
+                                    chunk += text[i];
+                                    i++;
+                                }
+                            }
+
+                            if (Regex.Match(chunk, @"^\s+$").Success)
+                            {
+                                if (list.Count > 1)
+                                {
+                                    list[list.Count - 1] += chunk;
+                                }
+                                chunk = "";
+                            }
+
+                            if (i < text.Length)
+                            {
+                                chunk += text[i];
+                            }
+
+                            i++;
+                        }
+
+                        list.Add(chunk);
+                    }
+
+                    return list.ToArray();
+                }
+
+                public static string[] SplitLines(string text)
+                {
+                    return Regex.Replace(text, @"([\r\n]+\s*)", @"$1</>").Split("</>");
+                }
+
+                public static string[] SplitWords(string text)
+                {
+                    return Regex.Replace(text, @"(\s)(\S)", @"$1</>$2").Split("</>");
+                }
+
+                public static string[] SplitChars(string text, bool countWhitespace = false)
+                {
+                    return SplitChunks(text, 1, countWhitespace);
+                }
+
+                /// <summary>
+                /// Parse the color tag &lt;color&gt; at the beginning of text and change the Current color if it is a match. Ignore if it isn't a known color.
+                /// </summary>
+                /// <param name="text">The text to colorize.</param>
+                /// <returns>The original text sans any confirmed color tags while also cleaning up any literal tags.</returns>
+                public string Paint(string text)
+                {
+                    string colortag = Regex.Match(text, @"^<(\w+)>").Groups[1].Value; // Parse the possible color from the tag
+                    bool validColor = Exists(colortag);
+
+                    if (!validColor)
+                    {
+                        validColor = true;
+
+                        switch (colortag)
+                        {
+                            case "prompt":
+                                text = ReplaceTags(text, GetColor(Prompt).Encapsulate("<"));
+                                break;
+                            case "primary":
+                                text = ReplaceTags(text, GetColor(Primary).Encapsulate("<"));
+                                break;
+                            case "secondary":
+                                text = ReplaceTags(text, GetColor(Secondary).Encapsulate("<"));
+                                break;
+                            case "random":
+                                text = ReplaceTags(text, GetColor(RandomColor(Palette.Auto)).Encapsulate("<"));
+                                break;
+                            default:
+                                validColor = false;
+                                break;
+                        }
+                    }
+
+                    return Paint(text, validColor);
+                }
+
+                public static string Paint(string text, bool validColor = false)
+                {
+                    string colortag = Regex.Match(text, @"^<(\w+)>").Groups[1].Value; // Parse the possible color from the tag
+
+                    validColor = (!validColor) ? Exists(colortag) : validColor;
+
+                    if (validColor)
+                    {
+                        Current = GetColor(colortag);
+                    }
+
+                    // Remove tag if tag is a valid color and clean up any forced literal tags from <\text> to <text>
+                    return CleanTags((validColor) ? Regex.Replace(text, @"^<\w+>", "") : text);
                 }
 
                 /// <summary>
@@ -335,19 +505,6 @@
                     }
                 }
 
-                static bool BackgroundIsDark()
-                {
-                    foreach (string color in Palettes["Dark"])
-                    {
-                        if (GetColor(color) == Console.BackgroundColor)
-                        {
-                            return true;
-                        }
-                    }
-
-                    return false;
-                }
-
                 static string[] GetPalette(string paletteName, int randomCount = 1)
                 {
                     Palette palette;
@@ -364,206 +521,22 @@
                     return GetPalette(palette, randomCount);
                 }
 
-                public static string Coat(string text, ConsoleColor color)
-                {
-                    string tag = GetColor(color).Encapsulate("<");
-
-                    return tag + text + "</>";
-                }
-
-                public static string Coat(string text, string color)
-                {
-                    return Coat(text, GetColor(color));
-                }
-
-                public static int CountTags(string text)
-                {
-                    int count = 0;
-
-                    foreach (Match m in Regex.Matches(text, @"<\w+>"))
-                    {
-                        if (StartsWithTag(m.Value))
-                        {
-                            count++;
-                        }
-                    }
-
-                    return count;
-                }
-
-                public static bool ContainsTag(string text)
-                {
-                    foreach (Match m in Regex.Matches(text, @"<\w+>"))
-                    {
-                        if (StartsWithTag(m.Value))
-                        {
-                            return true;
-                        }
-                    }
-
-                    return false;
-                }
-
                 /// <summary>
-                /// Split the text before any confirmed color tag &lt;color&gt; or at the end tag &lt;\&gt; so that it can be processed by the Paint method.
+                /// Convert a Palette to a ConsoleColor array.
                 /// </summary>
-                /// <param name="text">The string to split</param>
-                /// <returns>A string array containing the split text.</returns>
-                public static string[] Split(string text)
+                /// <param name="palette">The Palette to convert.</param>
+                /// <returns>A ConsoleColor array</returns>
+                static ConsoleColor[] ConvertPalette(Palette palette)
                 {
-                    text = Recoat(text, @"</>$&");
-                    text = Regex.Replace(text, @"(</>){2,}", "</>");
+                    string[] paletteArray = GetPalette(palette);
+                    ConsoleColor[] colorArray = new ConsoleColor[paletteArray.Length];
 
-                    return text.Split("</>", StringSplitOptions.RemoveEmptyEntries);
-                }
-
-                /// <summary>
-                /// Split a string into chunks of a specific number of characters.
-                /// </summary>
-                /// <param name="text">The text to split.</param>
-                /// <param name="chunkSize">The size of the chunk.</param>
-                /// <param name="countWhitespace">If true, whitespaces will be counted as characters.</param>
-                /// <returns>A string array.</returns>
-                public static string[] SplitChunks(string text, int chunkSize, bool countWhitespace = false)
-                {
-                    List<string> list = new List<string>();
-                    int i = 0;
-
-                    while (i < text.Length)
+                    for (int i = 0; i < paletteArray.Length; i++)
                     {
-                        string chunk = "";
-
-                        for (int j = 0; j < chunkSize; j++)
-                        {
-                            if (i < text.Length)
-                            {
-                                while (!countWhitespace && i < text.Length && Regex.Match(text[i].ToString(), @"\s").Success)
-                                {
-                                    chunk += text[i];
-                                    i++;
-                                }
-                            }
-
-                            if (Regex.Match(chunk, @"^\s+$").Success)
-                            {
-                                if (list.Count > 1)
-                                {
-                                    list[list.Count - 1] += chunk;
-                                }
-                                chunk = "";
-                            }
-
-                            if (i < text.Length)
-                            {
-                                chunk += text[i];
-                            }
-
-                            i++;
-                        }
-
-                        list.Add(chunk);
+                        colorArray[i] = GetColor(paletteArray[i]);
                     }
 
-                    return list.ToArray();
-                }
-
-                public static string[] SplitLines(string text)
-                {
-                    return Regex.Replace(text, @"([\r\n]+\s*)", @"$1</>").Split("</>");
-                }
-
-                public static string[] SplitWords(string text)
-                {
-                    return Regex.Replace(text, @"(\s)(\S)", @"$1</>$2").Split("</>");
-                }
-
-                public static string[] SplitChars(string text, bool countWhitespace = false)
-                {
-                    return SplitChunks(text, 1, countWhitespace);
-                }
-
-                /// <summary>
-                /// Toggles the Current color with the specified color
-                /// </summary>
-                /// <param name="color">The color to toggle to. It will set to Former if null.</param>
-                public void Toggle(ConsoleColor? color = null)
-                {
-                    Current = color ?? Previous;
-                }
-
-                /// <summary>
-                /// Switch Current color between Primary and Secondary colors or set to Primary if Current is not any of the two.
-                /// </summary>
-                public void Switch()
-                {
-                    if (Current == Primary)
-                    {
-                        Current = Secondary;
-                    }
-                    else
-                    {
-                        Current = Primary;
-                    }
-                }
-
-                public void Reset()
-                {
-                    Toggle(Primary);
-                }
-
-                /// <summary>
-                /// Parse the color tag &lt;color&gt; at the beginning of text and change the Current color if it is a match. Ignore if it isn't a known color.
-                /// </summary>
-                /// <param name="text">The text to colorize.</param>
-                /// <returns>The original text sans any confirmed color tags while also cleaning up any literal tags.</returns>
-                public string Paint(string text)
-                {
-                    if (ForceReset)
-                    {
-                        Reset();
-                    }
-                    else
-                    {
-                        if (Parent.Prefix.Current == PrefixType.Prompt || Parent.Prefix.Current == PrefixType.Indent)
-                        {
-                            Toggle();
-                        }
-                    }
-
-                    string colortag = Regex.Match(text, @"^<(\w+)>").Groups[1].Value; // Parse the possible color from the tag
-                    bool validColor;
-
-                    if (Exists(colortag))
-                    {
-                        Current = GetColor(colortag);
-                        validColor = true;
-                    }
-                    else
-                    {
-                        validColor = true;
-
-                        switch (colortag)
-                        {
-                            case "prompt":
-                                Console.ForegroundColor = Prompt;
-                                break;
-                            case "primary":
-                                Console.ForegroundColor = Primary;
-                                break;
-                            case "secondary":
-                                Console.ForegroundColor = Secondary;
-                                break;
-                            case "random":
-                                Console.ForegroundColor = RandomColor(Palette.Auto);
-                                break;
-                            default:
-                                validColor = false;
-                                break;
-                        }
-                    }
-
-                    // Remove tag if tag is a valid color and clean up any forced literal tags from <\text> to <text>
-                    return Regex.Replace(((validColor) ? Regex.Replace(text, @"^<\w+>", "") : text), @"<\\(\w+>)", @"<$1");
+                    return colorArray;
                 }
 
                 /// <summary>
@@ -598,7 +571,7 @@
 
                             i = (randomSort) ? Randomize(paletteArray.Length, i) : i + 1;
 
-                            chunkArray[j] = Coat(chunkArray[j], color);
+                            chunkArray[j] = InsertTag(chunkArray[j], color);
                         }
                     }
 
@@ -615,14 +588,14 @@
                 /// <returns></returns>
                 public static string[] PaletteChunks(string text, Palette palette, int chunkSize, bool randomSort = false)
                 {
-                    text = Shake(text);
+                    text = CleanTags(text);
 
                     return PaletteInsert(SplitChunks(text, chunkSize), palette, randomSort);
                 }
 
                 public static string[] PaletteChunks(string text, string[] paletteArray, int chunkSize, bool randomSort = false)
                 {
-                    text = Shake(text);
+                    text = CleanTags(text);
 
                     return PaletteInsert(SplitChunks(text, chunkSize), paletteArray, randomSort);
                 }
@@ -636,14 +609,14 @@
                 /// <returns></returns>
                 public static string[] PaletteLines(string text, Palette palette, bool randomSort = false)
                 {
-                    text = Shake(text);
+                    text = CleanTags(text);
 
                     return PaletteInsert(SplitLines(text), palette, randomSort);
                 }
 
                 public static string[] PaletteLines(string text, string[] paletteArray, bool randomSort = false)
                 {
-                    text = Shake(text);
+                    text = CleanTags(text);
 
                     return PaletteInsert(SplitLines(text), paletteArray, randomSort);
                 }
@@ -657,14 +630,14 @@
                 /// <returns></returns>
                 public static string[] PaletteWords(string text, Palette palette, bool randomSort = false)
                 {
-                    text = Shake(text);
+                    text = CleanTags(text);
 
                     return PaletteInsert(SplitWords(text), palette, randomSort);
                 }
 
                 public static string[] PaletteWords(string text, string[] paletteArray, bool randomSort = false)
                 {
-                    text = Shake(text);
+                    text = CleanTags(text);
 
                     return PaletteInsert(SplitWords(text), paletteArray, randomSort);
                 }
@@ -684,6 +657,23 @@
                 public static string[] PaletteChars(string text, string[] paletteArray, bool randomSort = false)
                 {
                     return PaletteChunks(text, paletteArray, 1, randomSort);
+                }
+
+                /// <summary>
+                /// Returns a random ConsoleColor
+                /// </summary>
+                /// <returns>A random ConsoleColor</returns>
+                public static ConsoleColor RandomColor(Palette palette = Palette.All)
+                {
+                    ConsoleColor[] colorArray = ConvertPalette(palette);
+                    int r = Randomize(colorArray.Length);
+
+                    while (colorArray[r] == Console.ForegroundColor || colorArray[r] == Console.BackgroundColor)
+                    {
+                        r = Randomize(colorArray.Length);
+                    }
+
+                    return colorArray[r];
                 }
             }
         }

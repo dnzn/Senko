@@ -2,11 +2,12 @@
 {
     using System;
     using System.Collections.Generic;
-    using Global;
+    using System.Text.RegularExpressions;
+    using Generic;
 
+    using static Generic.Fields;
     using static Static;
     using static Konsole.Parameters.Color;
-    using System.Text.RegularExpressions;
 
     public static class Static
     {
@@ -15,7 +16,7 @@
 
         public static void WriteLog(this Konsole konsole, bool truncate = true)
         {
-            Konsole.WriteLog(konsole.Name, truncate);
+            Konsole.WriteLog(konsole, truncate);
         }
 
         public static string ForceIndent(this string text, int indentLength)
@@ -32,7 +33,8 @@
             Write,
             WriteLine,
             Read,
-            ReadLine
+            ReadLine,
+            WriteLog
         };
 
         public string Name { get; private set; }
@@ -63,7 +65,7 @@
 
                 PrefixType prefix = Prefix.Current;
                 NewLineType newline = (method == OperationMethod.Write) ? NewLine.Write : NewLine.WriteLine;
-                ConsoleColor color = Color.Current;
+                ConsoleColor color = Current;
 
                 foreach (object obj in objectArray)
                 {
@@ -120,20 +122,23 @@
                 {
                     string t = s;
 
-                    if (color != Color.Current && !StartsWithTag(t))
+                    if (color != Current && !StartsWithTag(t))
                     {
-                        t = GetColor(color).Encapsulate("<") + t;
+                        t = InsertTag(t, color, false);
                     }
 
                     Console.Write(Color.Paint(t));
 
-                    if (first)
+                    if (method != OperationMethod.WriteLog)
                     {
-                        Log.Add(new LogEntry(Name, start, method, t));
-                    }
-                    else
-                    {
-                        Log.Add(new LogEntry(Name, start, t));
+                        if (first)
+                        {
+                            Log.Add(new LogEntry(Name, start, method, t));
+                        }
+                        else
+                        {
+                            Log.Add(new LogEntry(Name, start, t));
+                        }
                     }
 
                     first = false;
@@ -163,41 +168,97 @@
             Console.WriteLine();
         }
 
-        public static void WriteLog(string name, bool truncate = true)
+        static string HorizontalDivider(char c)
         {
+            return " " + new string(c, Console.WindowWidth - 2);
+        }
+
+        public static void WriteLog(Konsole konsole, bool truncate = true)
+        {    
             string limitName = null;
 
-            if (name != null && Names.Contains(name))
+            if (konsole != null && Names.Contains(konsole.Name))
             {
-                limitName = name;
+                limitName = konsole.Name;
             }
 
-            string log = "Konsole Log : " + limitName;
-            log = log.AppendLine(new string('=', Console.WindowWidth - 2));
+            string horizontalDivider = InsertTag(HorizontalDivider('-'), ConsoleColor.DarkGray);
+            string log = InsertTag(HorizontalDivider('='), ConsoleColor.DarkGray);
+            log = log.AppendLine(InsertTag(" Konsole Log : " + ((limitName != null) ? limitName : "Full Record"), ConsoleColor.Cyan));
+            log = log.AppendLine(horizontalDivider);
+
+            int NameMaxLength = 0;
+            int ElapsedMaxLength = 0;
+            int OperationMaxLength = 0;
+
+            foreach (LogEntry entry in Log)
+            {
+                if (limitName == null || limitName == entry.Name)
+                {
+                    NameMaxLength = (entry.Name.Length > NameMaxLength) ? entry.Name.Length : NameMaxLength;
+                    ElapsedMaxLength = (entry.ElapsedTime.Length > ElapsedMaxLength) ? entry.ElapsedTime.Length : ElapsedMaxLength;
+                    OperationMaxLength = (entry.Operation.Length > OperationMaxLength) ? entry.Operation.Length : OperationMaxLength;
+                }
+            }
 
             string lastDate = "";
 
             foreach (LogEntry entry in Log)
             {
-                string logDate = entry.Time.ToString("MM/dd/yyyy");
-
+                string text;
+                string logDate = entry.Time.ToString("dddd, MMMM d, yyyy");
+                
                 if (lastDate != logDate)
                 {
-                    log = log.AppendLine(logDate);
-                    log = log.AppendLine(new string('-', Console.WindowWidth - 2));
+                    log = log.AppendLine(" <white>" + logDate);
+                    log = log.AppendLine(horizontalDivider);
                     lastDate = logDate;
-                }
+                }                
 
                 if (limitName == null || limitName == entry.Name)
                 {
-                    log = log.AppendLine(entry.ToString(limitName, truncate));
+                    string divider = "<darkgray>|<gray>";
+                    int dividerLength;
+
+                    if (limitName == null)
+                    {
+                        text = " {1} {0} {2} {0} {3} {0} {4} {0} {5}".Format(
+                            divider,
+                            entry.Time.ToString("HH:mm:ss:fff"),
+                            entry.ElapsedTime.PadLeft(ElapsedMaxLength),
+                            entry.Name.PadRight(NameMaxLength),
+                            entry.Operation.PadRight(OperationMaxLength),
+                            DisableTags(entry.Text));
+
+                        dividerLength = (divider.Length * 4) - 4;
+                    }
+                    else
+                    {
+                        text = " {1} {0} {2} {0} {3} {0} {4} ".Format(
+                            divider,
+                            entry.Time.ToString("HH:mm:ss:fff"),
+                            entry.ElapsedTime.PadLeft(ElapsedMaxLength),
+                            entry.Operation.PadRight(OperationMaxLength),
+                            DisableTags(entry.Text));
+                        
+                        dividerLength = (divider.Length * 3) - 3;
+                    }
+
+                    int l = Console.WindowWidth - 5; 
+                    text = (truncate) ? (CleanTags(text).Length <= l) ? text : text.Substring(0, l + dividerLength) + InsertTag("[...]", ConsoleColor.DarkGray) : text;
+
+                    log = log.AppendLine(InsertTag(text, ConsoleColor.Gray));
                 }
             }
 
-            log = log.AppendLine(new string('-', Console.WindowWidth - 2));
+            log = log.AppendLine(horizontalDivider);
 
-            Console.WriteLine();
-            Console.WriteLine(log);
+            Kon.WriteLine();
+
+            foreach (string s in Split(log))
+            {
+                Console.Write(Kon.Color.Paint(s));
+            }
         }
 
         public static void WriteLog(bool truncate = true)

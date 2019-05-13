@@ -1,4 +1,4 @@
-﻿namespace Global
+﻿namespace Generic
 {
     using System;
     using System.Collections.Generic;
@@ -308,10 +308,44 @@
         {
             return obj.ToString() + Environment.NewLine + append.ToString();
         }
+
+        public static string Multiply(this string text, int by)
+        {
+            string result = text;
+
+            for(int i = 0; i < by; i++)
+            {
+                result += text;
+            }
+
+            return result;
+        }
     }
 
     public static class Methods
     {
+        /// <summary>
+        /// Randomize a number from zero to max.
+        /// </summary>
+        /// <param name="max">The maximum value.</param>
+        /// <param name="original">An optional value that the method will avoid returning</param>
+        /// <returns>Returns an int within the specified range that is not equals to the original value.</returns>
+        public static int Randomize(int max, int original = -1)
+        {
+            Random rnd = new Random();
+            int i = rnd.Next(max);
+
+            if (original > -1)
+            {
+                while (i == original)
+                {
+                    i = rnd.Next(max);
+                }
+            }
+
+            return i;
+        }
+
         public static void OpenURL(string url)
         {
             // "chrome --start-maximized https://github.com/TsurugiDanzen/Remo" will open Chrome;

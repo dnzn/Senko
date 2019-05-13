@@ -6,7 +6,7 @@
     using System.Linq;
     using System.Text.RegularExpressions;
     using Newtonsoft.Json;
-    using Global;
+    using Generic;
 
     public partial class SonyDevice
     {

@@ -2,7 +2,7 @@
 {
     using System;
     using System.Text.RegularExpressions;
-    using Global;
+    using Generic;
 
     public partial class Konsole
     {
