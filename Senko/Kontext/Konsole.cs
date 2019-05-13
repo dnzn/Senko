@@ -34,7 +34,8 @@
             WriteLine,
             Read,
             ReadLine,
-            WriteLog
+            WriteLog,
+            Previous
         };
 
         public string Name { get; private set; }
@@ -133,11 +134,11 @@
                     {
                         if (first)
                         {
-                            Log.Add(new LogEntry(Name, start, method, t));
+                            Log.Add(new LogEntry(this, start, method, t));
                         }
                         else
                         {
-                            Log.Add(new LogEntry(Name, start, t));
+                            Log.Add(new LogEntry(this, start, OperationMethod.Previous, t));
                         }
                     }
 
@@ -174,7 +175,9 @@
         }
 
         public static void WriteLog(Konsole konsole, bool truncate = true)
-        {    
+        {
+            DateTime start = DateTime.Now;
+            
             string limitName = null;
 
             if (konsole != null && Names.Contains(konsole.Name))
@@ -197,7 +200,7 @@
                 {
                     NameMaxLength = (entry.Name.Length > NameMaxLength) ? entry.Name.Length : NameMaxLength;
                     ElapsedMaxLength = (entry.ElapsedTime.Length > ElapsedMaxLength) ? entry.ElapsedTime.Length : ElapsedMaxLength;
-                    OperationMaxLength = (entry.Operation.Length > OperationMaxLength) ? entry.Operation.Length : OperationMaxLength;
+                    OperationMaxLength = (entry.Operation.ToString().Length > OperationMaxLength) ? entry.Operation.ToString().Length : OperationMaxLength;
                 }
             }
 
@@ -205,49 +208,47 @@
 
             foreach (LogEntry entry in Log)
             {
-                string text;
-                string logDate = entry.Time.ToString("dddd, MMMM d, yyyy");
+                string t;
+
+                string logDate = entry.Time.ToString("dddd, MMMM d, yyyy");                
                 
                 if (lastDate != logDate)
                 {
                     log = log.AppendLine(" <white>" + logDate);
                     log = log.AppendLine(horizontalDivider);
                     lastDate = logDate;
-                }                
+                }
+
+                string time = entry.Time.ToString("HH:mm:ss:fff");
+                string elapsedTime = entry.ElapsedTime.PadLeft(ElapsedMaxLength);
+                string name = entry.Name.PadRight(NameMaxLength);
+                string operation = ((entry.Operation != OperationMethod.Previous) ? entry.Operation.ToString() : "").PadRight(OperationMaxLength);
+                string text = (entry.Operation == OperationMethod.WriteLog) ? entry.Text.Encapsulate("[") : entry.Text;
+
+                string color = (entry.Operation != OperationMethod.Previous) ? "<white>" : "<gray>";
 
                 if (limitName == null || limitName == entry.Name)
                 {
-                    string divider = "<darkgray>|<gray>";
+                    string divider = "<darkgray>|" + color;
                     int dividerLength;
 
                     if (limitName == null)
                     {
-                        text = " {1} {0} {2} {0} {3} {0} {4} {0} {5}".Format(
-                            divider,
-                            entry.Time.ToString("HH:mm:ss:fff"),
-                            entry.ElapsedTime.PadLeft(ElapsedMaxLength),
-                            entry.Name.PadRight(NameMaxLength),
-                            entry.Operation.PadRight(OperationMaxLength),
-                            DisableTags(entry.Text));
+                        t = " {1} {0} {2} {0} {3} {0} {4} {0} {5}".Format(divider, time, elapsedTime, name, operation, DisableTags(text));
 
                         dividerLength = (divider.Length * 4) - 4;
                     }
                     else
                     {
-                        text = " {1} {0} {2} {0} {3} {0} {4} ".Format(
-                            divider,
-                            entry.Time.ToString("HH:mm:ss:fff"),
-                            entry.ElapsedTime.PadLeft(ElapsedMaxLength),
-                            entry.Operation.PadRight(OperationMaxLength),
-                            DisableTags(entry.Text));
-                        
+                        t = " {1} {0} {2} {0} {3} {0} {4}".Format(divider, time, elapsedTime, operation, DisableTags(text));
+
                         dividerLength = (divider.Length * 3) - 3;
                     }
 
                     int l = Console.WindowWidth - 5; 
-                    text = (truncate) ? (CleanTags(text).Length <= l) ? text : text.Substring(0, l + dividerLength) + InsertTag("[...]", ConsoleColor.DarkGray) : text;
+                    t = (truncate) ? (CleanTags(t).Length <= l) ? t : t.Substring(0, l + dividerLength) + InsertTag("[...]", ConsoleColor.DarkGray) : t;
 
-                    log = log.AppendLine(InsertTag(text, ConsoleColor.Gray));
+                    log = log.AppendLine(color + t);
                 }
             }
 
@@ -259,6 +260,8 @@
             {
                 Console.Write(Kon.Color.Paint(s));
             }
+            
+            Log.Add(new LogEntry(konsole, start, OperationMethod.WriteLog, Log.Count + ((Log.Count > 1) ? " log entries were written..." : " log entry was written...")));
         }
 
         public static void WriteLog(bool truncate = true)

@@ -22,6 +22,7 @@
             Kon.WriteLine(dev.Command.Code["Hdmi1"]);
 
             WriteLog();
+            WriteLog();
 
             while (true)
             {

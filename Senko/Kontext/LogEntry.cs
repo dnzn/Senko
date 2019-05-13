@@ -13,30 +13,23 @@
         public DateTime Time { get; private set; }
         public DateTime Start { get; private set; }
         public string ElapsedTime { get { return (Time - Start).TotalMilliseconds.ToString("0.#0ms"); } }
-        public string Operation { get; private set; }
+        public OperationMethod Operation { get; private set; }
         public string Text { get; private set; }
 
-        public LogEntry(string name, DateTime start, OperationMethod operation, string text)
+        public LogEntry(Konsole konsole, DateTime start, OperationMethod operation, string text)
         {
-            Init(name, start, operation, text);
-        }
+            if (konsole != null)
+            {
+                Name = konsole.Name;
+            }
+            else
+            {
+                Name = "Konsole";
+            }
 
-        public LogEntry(string name, DateTime start, string operation, string text)
-        {
-            Init(name, start, operation, text);
-        }
-
-        public LogEntry(string name, DateTime start, string text)
-        {
-            Init(name, start, "", text);
-        }
-
-        public void Init(string name, DateTime start, object operation, string text)
-        {
-            Name = name;
             Time = DateTime.Now;
             Start = start;
-            Operation = operation.ToString();
+            Operation = operation;
             Text = Regex.Replace(text, @Environment.NewLine, @"\n");
         }
 
@@ -44,7 +37,7 @@
         {
             int nameLength = 0;
 
-            string operation = Operation.PadRight(9);
+            string operation = Operation.ToString().PadRight(9);
             string elapsedTime = ElapsedTime.PadLeft(8);
 
             if (instance == null)
