@@ -3,6 +3,7 @@
     using System;
     using System.Diagnostics;
     using Generic;
+    using Kontext;
 
     using static Kontext.Konsole;
     using static Kontext.Konsole.Parameters;
@@ -20,9 +21,8 @@
             
             Kon.WriteLine(dev.Info.Model);
             Kon.WriteLine(dev.Command.Code["Hdmi1"]);
-
-            WriteLog();
-            WriteLog();
+            Kon.WriteLine("abcdefghijklmnopqrstuvwxyz<gr>012<a>3456789ABCDEFGHIJKLMNOPQRSTU\nVWXYZ");
+            Kon.WriteLog();
 
             while (true)
             {
@@ -36,7 +36,7 @@
         {
             // 我が名は仙狐。
             // The project has been renamed to Senko, after the helpful fox in the anime "Sewayaki Kitsune no Senko-san"
-            // Senko is also acronym for "SENd KOmmand".
+            // Senko is also a backronym for "SENd KOmmand".
 
             string title = Color.InsertTag("PROJECT:SENKO | Remote Control", ConsoleColor.Cyan);
             System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();
@@ -48,28 +48,28 @@
 
             string ascii = new string[]
             {
-                @"@22#,.",
-                @"@17#.*&&4@# .#@@@%*",
-                @"@16##@@%,.&@&@@@//@%,",
-                @"@13#.%@@(,  ,@@@&/  ,@#,",
-                @"@11#,#@%/@6#,*.@4#.&@@(.@15#",
-                @"@10#*@@#@17#*#@@@/.",
-                @"@9#,@&(@21#,/&@@%",
-                @"@8#,@%@17#,/%@@@&%/.",
-                @"@7#*%@,@15#*@@@%*, ,/%&&8@}%#/.",
-                @"@7#%@#@15#/&@,.*%&@@@%(*,...,,*#&@@%(",
-                @"@6#,@@,@15#.(&4@%#,@15#*@@%",
-                @"@5#,#@%@42#*@%,",
-                @"@5#,%@%@42#,@%,",
-                @"@6#,,.   ./%&&15@&%(,.@13#.%@@.  /*",
-                @"@9#,%@@@%(,.@10#..*#%&@@@&%(,,,.,,*#&@@%.  ,@@,",
-                @"@6#.#&@&*,@23#,(#&&7@&%*@6#&@(",
-                @"@4#(@@%/@47#%@#",
-                @"  *%@#*@5#{0}@14#&@(",
-                @" *@@/@7#{1}*@@,",
-                @",@@&%#(,.   {2}@4#.@&(",
-                @",##%%&@@@#,@42#/&@*",
-                Color.InsertTag(new string('#', Console.WindowWidth - 1), ConsoleColor.DarkGray) + Environment.NewLine
+                "@26#,.",
+                "@17#.*&&4@# .#@@@%*",
+                "@16##@@%,.&@&@@@//@%,",
+                "@13#.%@@(,  ,@@@&/  ,@#,",
+                "@11#,#@%/@6#,*.@4#.&@@(.@15#",
+                "@10#*@@#@17#*#@@@/.",
+                "@9#,@&(@21#,/&@@%",
+                "@8#,@%@17#,/%@@@&%/.",
+                "@7#*%@,@15#*@@@%*, ,/%&&8@}%#/.",
+                "@7#%@#@15#/&@,.*%&@@@%(*,...,,*#&@@%(",
+                "@6#,@@,@15#.(&4@%#,@15#*@@%",
+                "@5#,#@%@42#*@%,",
+                "@5#,%@%@42#,@%,",
+                "@6#,,.   ./%&&15@&%(,.@13#.%@@.  /*",
+                "@9#,%@@@%(,.@10#..*#%&@@@&%(,,,.,,*#&@@%.  ,@@,",
+                "@6#.#&@&*,@23#,(#&&7@&%*@6#&@(",
+                "@4#(@@%/@47#%@#",
+                "  *%@#*@5#{0}@14#&@(",
+                " *@@/@7#{1}*@@,",
+                ",@@&%#(,.   {2}@4#.@&(",
+                ",##%%&@@@#,@42#/&@*",
+                Color.InsertTag(new string('#', Console.WindowWidth - 1), ConsoleColor.DarkGray, false) + Environment.NewLine
                 //@"@9#/&@@(@38#(@@*",
                 //@"@12#,%@@#.@31#.%@@*",
                 //@"@14#,/@@@/@27#/#@@#",

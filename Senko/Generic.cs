@@ -306,7 +306,14 @@
 
         public static string AppendLine(this object obj, object append)
         {
+            obj = obj ?? "";
+
             return obj.ToString() + Environment.NewLine + append.ToString();
+        }
+
+        public static string Insert(this string text, string insert, int index)
+        {
+            return text.Substring(0, index) + insert + text.Substring(index);
         }
 
         public static string Multiply(this string text, int by)
@@ -319,6 +326,11 @@
             }
 
             return result;
+        }
+
+        public static int Count(this string haystack, string needle)
+        {
+            return (haystack.Length - haystack.Replace(needle, "").Length) / needle.Length; 
         }
     }
 

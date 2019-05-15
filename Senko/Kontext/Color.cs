@@ -5,6 +5,7 @@
     using System.Text.RegularExpressions;
     using Generic;
 
+    using static Generic.Extensions;
     using static Generic.Methods;
 
     public partial class Konsole
@@ -213,9 +214,16 @@
                     }
                 }
 
+                public static string CreateTag(object obj)
+                {
+                    string tag = (obj is ConsoleColor color) ? GetColor(color) : obj.ToString();
+
+                    return tag.Standardize().Encapsulate('<');
+                }
+
                 public static string InsertTag(string text, ConsoleColor color, bool addBreakTag = true)
                 {
-                    string tag = GetColor(color).Encapsulate("<");
+                    string tag = CreateTag(color);
                     string breakTag = "</>";
 
                     if (!addBreakTag)
@@ -229,6 +237,16 @@
                 public static string InsertTag(string text, string color, bool addBreakTag = true)
                 {
                     return InsertTag(text, GetColor(color), addBreakTag);
+                }
+
+                public static string WrapWithTag(string text, string pattern, ConsoleColor color, bool addBreakTag = true)
+                {
+                    return Regex.Replace(text, pattern, InsertTag("$&", color, addBreakTag));
+                }
+
+                public static string WrapWithTag(string text, string pattern, ConsoleColor color, string append)
+                {
+                    return Regex.Replace(text, pattern, InsertTag("$&" + append, color, false));
                 }
 
                 /// <summary>
@@ -262,14 +280,42 @@
 
                 public static string CleanTags(string text, int count = 0)
                 {
-                    text = Regex.Replace(text, @"<\w+>", "");
+                    foreach (Match m in Regex.Matches(text, @"<\w+>"))
+                    {
+                        if (StartsWithTag(m.Value))
+                        {
+                            text = Regex.Replace(text, m.Value, "");
+                        }
+                    }
+
+                    foreach (Match m in Regex.Matches(text, @"<\w+>"))
+                    {
+                        if (StartsWithTag(m.Value))
+                        {
+                            string newTag = Regex.Replace(m.Value, "<", @"<\");
+
+                            text = Regex.Replace(text, m.Value, newTag);
+                        }
+                    }
+
                     return Regex.Replace(text, @"<\\(\w+>)", "<$1");
                 }
 
                 public static string DisableTags(string text)
                 {
                     text = Regex.Replace(text, @"<\\(\w+>)", @"<\\$1");
-                    return Regex.Replace(text, @"<(\w+>)", @"<\$1");
+
+                    foreach (Match m in Regex.Matches(text, @"<\w+>"))
+                    {
+                        if (StartsWithTag(m.Value))
+                        {
+                            string newTag = Regex.Replace(m.Value, "<", @"<\");
+
+                            text = Regex.Replace(text, m.Value, newTag);
+                        }
+                    }
+
+                    return text;
                 }
 
                 public static string EnableTags(string text)
@@ -292,83 +338,16 @@
 
                     return count;
                 }
-
-                /// <summary>
-                /// Split the text before any confirmed color tag &lt;color&gt; or at the end tag &lt;\&gt; so that it can be processed by the Paint method.
-                /// </summary>
-                /// <param name="text">The string to split</param>
-                /// <returns>A string array containing the split text.</returns>
-                public static string[] Split(string text)
+                public static int CountDisabledTags(string text)
                 {
-                    text = ReplaceTags(text, @"</>$&");
-                    text = Regex.Replace(text, @"(</>){2,}", "</>");
+                    int count = 0;
 
-                    return text.Split("</>", StringSplitOptions.RemoveEmptyEntries);
-                }
-
-                /// <summary>
-                /// Split a string into chunks of a specific number of characters.
-                /// </summary>
-                /// <param name="text">The text to split.</param>
-                /// <param name="chunkSize">The size of the chunk.</param>
-                /// <param name="countWhitespace">If true, whitespaces will be counted as characters.</param>
-                /// <returns>A string array.</returns>
-                public static string[] SplitChunks(string text, int chunkSize, bool countWhitespace = false)
-                {
-                    List<string> list = new List<string>();
-                    int i = 0;
-
-                    while (i < text.Length)
+                    foreach (Match m in Regex.Matches(text, @"<\\{1,2}\w+>"))
                     {
-                        string chunk = "";
-
-                        for (int j = 0; j < chunkSize; j++)
-                        {
-                            if (i < text.Length)
-                            {
-                                while (!countWhitespace && i < text.Length && Regex.Match(text[i].ToString(), @"\s").Success)
-                                {
-                                    chunk += text[i];
-                                    i++;
-                                }
-                            }
-
-                            if (Regex.Match(chunk, @"^\s+$").Success)
-                            {
-                                if (list.Count > 1)
-                                {
-                                    list[list.Count - 1] += chunk;
-                                }
-                                chunk = "";
-                            }
-
-                            if (i < text.Length)
-                            {
-                                chunk += text[i];
-                            }
-
-                            i++;
-                        }
-
-                        list.Add(chunk);
+                        count++;
                     }
 
-                    return list.ToArray();
-                }
-
-                public static string[] SplitLines(string text)
-                {
-                    return Regex.Replace(text, @"([\r\n]+\s*)", @"$1</>").Split("</>");
-                }
-
-                public static string[] SplitWords(string text)
-                {
-                    return Regex.Replace(text, @"(\s)(\S)", @"$1</>$2").Split("</>");
-                }
-
-                public static string[] SplitChars(string text, bool countWhitespace = false)
-                {
-                    return SplitChunks(text, 1, countWhitespace);
+                    return count;
                 }
 
                 /// <summary>
@@ -388,16 +367,16 @@
                         switch (colortag)
                         {
                             case "prompt":
-                                text = ReplaceTags(text, GetColor(Prompt).Encapsulate("<"));
+                                text = ReplaceTags(text, CreateTag(Prompt));
                                 break;
                             case "primary":
-                                text = ReplaceTags(text, GetColor(Primary).Encapsulate("<"));
+                                text = ReplaceTags(text, CreateTag(Primary));
                                 break;
                             case "secondary":
-                                text = ReplaceTags(text, GetColor(Secondary).Encapsulate("<"));
+                                text = ReplaceTags(text, CreateTag(Secondary));
                                 break;
                             case "random":
-                                text = ReplaceTags(text, GetColor(RandomColor(Palette.Auto)).Encapsulate("<"));
+                                text = ReplaceTags(text, CreateTag(RandomColor(Palette.Auto)));
                                 break;
                             default:
                                 validColor = false;
@@ -674,6 +653,84 @@
                     }
 
                     return colorArray[r];
+                }
+
+                /// <summary>
+                /// Split the text before any confirmed color tag &lt;color&gt; or at the end tag &lt;\&gt; so that it can be processed by the Paint method.
+                /// </summary>
+                /// <param name="text">The string to split</param>
+                /// <returns>A string array containing the split text.</returns>
+                public static string[] Split(string text)
+                {
+                    text = ReplaceTags(text, @"</>$&");
+                    text = Regex.Replace(text, @"(</>){2,}", "</>");
+
+                    return text.Split("</>", StringSplitOptions.RemoveEmptyEntries);
+                }
+
+                /// <summary>
+                /// Split a string into chunks of a specific number of characters.
+                /// </summary>
+                /// <param name="text">The text to split.</param>
+                /// <param name="chunkSize">The size of the chunk.</param>
+                /// <param name="countWhitespace">If true, whitespaces will be counted as characters.</param>
+                /// <returns>A string array.</returns>
+                public static string[] SplitChunks(string text, int chunkSize, bool countWhitespace = false)
+                {
+                    List<string> list = new List<string>();
+                    int i = 0;
+
+                    while (i < text.Length)
+                    {
+                        string chunk = "";
+
+                        for (int j = 0; j < chunkSize; j++)
+                        {
+                            if (i < text.Length)
+                            {
+                                while (!countWhitespace && i < text.Length && Regex.Match(text[i].ToString(), @"\s").Success)
+                                {
+                                    chunk += text[i];
+                                    i++;
+                                }
+                            }
+
+                            if (Regex.Match(chunk, @"^\s+$").Success)
+                            {
+                                if (list.Count > 1)
+                                {
+                                    list[list.Count - 1] += chunk;
+                                }
+                                chunk = "";
+                            }
+
+                            if (i < text.Length)
+                            {
+                                chunk += text[i];
+                            }
+
+                            i++;
+                        }
+
+                        list.Add(chunk);
+                    }
+
+                    return list.ToArray();
+                }
+
+                public static string[] SplitLines(string text)
+                {
+                    return Regex.Replace(text, @"([\r\n]+\s*)", @"$1</>").Split("</>");
+                }
+
+                public static string[] SplitWords(string text)
+                {
+                    return Regex.Replace(text, @"(\s)(\S)", @"$1</>$2").Split("</>");
+                }
+
+                public static string[] SplitChars(string text, bool countWhitespace = false)
+                {
+                    return SplitChunks(text, 1, countWhitespace);
                 }
             }
         }

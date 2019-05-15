@@ -4,6 +4,9 @@
     using System.Text.RegularExpressions;
     using Generic;
 
+    using static Konsole.Parameters.Color;
+    using static Konsole.Parameters.NewLine;
+
     public partial class Konsole
     {
         public enum PrefixType
@@ -85,25 +88,9 @@
                     Parent = parent;
                 }
 
-                public PrefixType GetEmbeddedPrefix(string text)
-                {
-                    if (text.Contains("prompt".Encapsulate("<") + Prompt))
-                    {
-                        return PrefixType.Prompt;
-                    }
-                    else if (text.Contains("prompt".Encapsulate("<") + Indent))
-                    {
-                        return PrefixType.Indent;
-                    }
-                    else
-                    {
-                        return PrefixType.None;
-                    }
-                }
-
                 public string RemovePrefix(string text)
                 {
-                    return Regex.Replace(text, @"<prompt>({0}|{1})".Format(Prompt, Indent), ""); //text.Replace("prompt".Encapsulate("<") + Prompt, "").Replace("prompt".Encapsulate("<") + Indent, "");
+                    return Regex.Replace(text, @"^({0}|{1})".Format(CreateTag("prompt") + Prompt, Indent), "");
                 }
 
                 public string Insert(string text, PrefixType? setting = null)
@@ -119,12 +106,12 @@
                     }
 
                     text = RemovePrefix(text);
-                    text = Parameters.NewLine.Flush(text);
+                    text = Flush(text);
 
                     switch (setting)
                     {
                         case PrefixType.Prompt:
-                            text = Regex.Replace(FormatText(Prompt, text, "<prompt>"), @Environment.NewLine, FormatInsert(Indent, @"$&"));
+                            text = Regex.Replace(FormatText(Prompt, text, CreateTag("prompt")), @Environment.NewLine, FormatInsert(Indent, @"$&"));
                             break;
                         case PrefixType.Indent:
                             text = Regex.Replace(FormatText(Indent, text), @Environment.NewLine, FormatInsert(Indent, @"$&"));

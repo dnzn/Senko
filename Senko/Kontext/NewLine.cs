@@ -98,6 +98,13 @@
                 {
                     return Regex.Replace(text, @"[\r\n]+", Environment.NewLine);
                 }
+
+                public static string[] Split(string text)
+                {
+                    text = Flush(text);
+
+                    return text.Split(Environment.NewLine);
+                }
             }
         }
     }
