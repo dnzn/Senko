@@ -4,30 +4,13 @@
     using System.Collections.Generic;
     using System.Text.RegularExpressions;
     using Generic;
-
-    using static Generic.Fields;
-    using static Static;
-    using static Konsole.Parameters.Color;
     using System.Linq;
 
-    public static class Static
-    {
-        public static List<LogEntry> Log { get; } = new List<LogEntry>();
-        public static List<string> Names { get; private set; } = new List<string>();
+    using static Generic.Fields;
+    using static Kontext;
+    using static Konsole.Parameters;
 
-        public static void WriteLog(this Konsole konsole, bool truncate = true)
-        {
-            Konsole.WriteLog(konsole, truncate);
-        }
-
-        public static string ForceIndent(this string text, int indentLength)
-        {
-            string Indent = new string(' ', indentLength);
-            return Regex.Replace(text, Environment.NewLine + "|^", @"$&" + Indent);
-        }
-    }
-
-    public partial class Konsole
+    public static class Kontext
     {
         public enum OperationMethod
         {
@@ -36,9 +19,41 @@
             Read,
             ReadLine,
             WriteLog,
-            Previous
+            PreviousOperation
         };
 
+        public static Konsole MainKonsole { get; set; }
+        public static List<Konsole> Konsoles { get; } = new List<Konsole>();
+
+        public static Regex RegexForceIndent { get; } = new Regex(Environment.NewLine + "|^");
+
+        public static void WriteLog(this Konsole konsole, bool truncate = true)
+        {
+            Konsole.WriteLog(konsole, truncate);
+        }
+
+        public static string ForceIndent(this string text, int indentLength)
+        {
+            var Indent = new string(' ', indentLength);
+            return RegexForceIndent.Replace(text, @"$&" + Indent);
+        }
+
+        public static bool Contains(this List<Konsole> konsoles, string name)
+        {
+            foreach (Konsole konsole in konsoles)
+            {
+                if (konsole.Name == name)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
+    public partial class Konsole
+    {
         public string Name { get; private set; }
         static int CursorPosition { get { return Console.CursorLeft; } } 
 
@@ -50,24 +65,29 @@
             NewLine = new Parameters.NewLine(this);
             Console.CursorVisible = false;
 
-            if (!Names.Contains(Name))
+            if (MainKonsole == null)
             {
-                Names.Add(Name);
+                MainKonsole = this;
+            }
+
+            if (!Konsoles.Contains(Name))
+            {
+                Konsoles.Add(this);
             }
         }
 
         void Echo(string text, OperationMethod method, params object[] objectArray)
         {
-            DateTime start = DateTime.Now;
+            Log.Initialize(this, method);
 
             if (method.ToString().Contains("Write"))
             {
-                List<string> stringList = new List<string>();
-                ColorSplit ColorSplitter = new ColorSplit();
+                var stringList = new List<string>();
+                var ColorSplitter = new ColorSplit();
 
                 PrefixType prefix = Prefix.Current;
                 NewLineType newline = (method == OperationMethod.Write) ? NewLine.Write : NewLine.WriteLine;
-                ConsoleColor color = Current;
+                ConsoleColor color = Color.Current;
 
                 foreach (object obj in objectArray)
                 {
@@ -119,35 +139,51 @@
 
                 text = NewLine.Insert(text, newline);
 
-                bool first = true;
-
-                foreach (string s in Split(text))
-                {
-                    string t = s;
-
-                    if (color != Current && !StartsWithTag(t))
-                    {
-                        t = InsertTag(t, color, false);
-                    }
-
-                    Console.Write(Color.Paint(t));
-
-                    if (first)
-                    {
-                        Log.Add(new LogEntry(this, start, method, t));
-                    }
-                    else
-                    {
-                        Log.Add(new LogEntry(this, start, OperationMethod.Previous, t));
-                    }
-
-                    start = DateTime.Now;
-
-                    first = false;
-                } 
+                Painter(text, this, color, method);
             }
 
             Color.Reset();
+        }
+
+        static void Painter(string text, Konsole konsole, ConsoleColor color, OperationMethod method)
+        {
+            bool first = true;
+
+            foreach (string s in Color.Split(text))
+            {
+                string t = s;
+
+                if (color != Color.Current && !Color.StartsWithTag(t))
+                {
+                    t = Color.InsertTag(t, color, false);
+                }
+
+                Console.Write(konsole.Color.Paint(t));
+
+                if (first)
+                {
+                    Log.Commit(t);
+                }
+                else
+                {
+                    Log.Commit(OperationMethod.PreviousOperation, t);
+                }
+
+                first = false;
+            }
+        }
+
+        static void Painter(string text, Konsole konsole, bool writeline = true)
+        {
+            foreach (string s in Color.Split(text))
+            {
+                Console.Write(MainKonsole.Color.Paint(s));
+            }
+
+            if (writeline)
+            {
+                Console.WriteLine();
+            }
         }
 
         public void Write(object obj, params object[] objectArray)
@@ -177,99 +213,106 @@
 
         public static void WriteLog(Konsole konsole, bool truncate = true)
         {
-            DateTime start = DateTime.Now;
-            
-            string limitName = null;
+            Log.Initialize(konsole, OperationMethod.WriteLog);
 
-            if (konsole != null && Names.Contains(konsole.Name))
+            Konsole painter;
+            List<Log.Record> Records;
+            Log.MaxLengths maxLengths;
+
+            if (konsole != null)
             {
-                limitName = konsole.Name;
+                painter = konsole;
+                Records = Log.FilterRecords(konsole);
+                maxLengths = new Log.MaxLengths(Records);
+            }
+            else
+            {
+                painter = MainKonsole;
+                Records = Log.Records;
+                maxLengths = Log.MaxLength;
             }
 
             ConsoleColor tableColor = ConsoleColor.DarkGray;
 
-            string whiteTag = CreateTag(ConsoleColor.White);
-            string grayTag = CreateTag(ConsoleColor.Gray);
-            string darkCyanTag = CreateTag(ConsoleColor.DarkCyan);
+            string whiteTag = Color.CreateTag(ConsoleColor.White);
+            string grayTag = Color.CreateTag(ConsoleColor.Gray);
+            string darkCyanTag = Color.CreateTag(ConsoleColor.DarkCyan);
 
-            string thickDivider = InsertTag(HorizontalDivider('='), ConsoleColor.DarkCyan);
+            string thickDivider = Color.InsertTag(HorizontalDivider('='), ConsoleColor.DarkCyan);
             string thinDivider = HorizontalDivider('-');
             string log = thickDivider;
 
-            string headerText = " [KONSOLE LOG] : " + ((limitName != null) ? limitName : "Full Record");
+            string headerText = " [KONSOLE LOG] : " + ((konsole != null) ? konsole.Name : "Full Record");
             string logStart = "LOG START";
 
-            log = log.AppendLine(CreateTag(ConsoleColor.Cyan) + headerText + new string(' ', Console.WindowWidth - headerText.Length - logStart.Length - 1) + darkCyanTag + logStart);
+            log = log.AppendLine(Color.CreateTag(ConsoleColor.Cyan) + headerText + new string(' ', Console.WindowWidth - headerText.Length - logStart.Length - 1) + darkCyanTag + logStart);
             log = log.AppendLine(darkCyanTag + thinDivider);
             
             string lastDate = "";
-            int counter = 0;
-            int records = 1;
 
-            foreach (LogEntry entry in Log)
+            foreach (Log.Record record in Records)
             {
                 string row;
-                counter++;
 
-                string logDate = entry.Time.ToString("dddd, MMMM d, yyyy");                
+                string logDate = record.StartTime.ToString("dddd, MMMM d, yyyy");                
                 
                 if (lastDate != logDate)
                 {
                     log = log.AppendLine(" " + whiteTag + logDate);
-                    log = log.AppendLine(CreateTag(tableColor) + thinDivider);
                     lastDate = logDate;
                 }
 
-                string record = "";
-                int recordLength = LogEntry.Records.ToString().Length;
+                string id = "";
 
-                if (entry.Operation != OperationMethod.Previous)
+                int idLength = maxLengths.OperationID + maxLengths.IterationID + 1;
+
+                if (record.Operation != OperationMethod.PreviousOperation)
                 {
-                    record = records.ToString(new string('#', recordLength)).PadRight(recordLength);
-                    records++;
+                    log = log.AppendLine(Color.CreateTag(tableColor) + thinDivider);
+                    string operationID = record.OperationID.ToString(new string('#', maxLengths.OperationID)).PadLeft(maxLengths.OperationID);
+                    string iterationID = record.IterationID.ToString(new string('#', maxLengths.IterationID)).PadRight(maxLengths.IterationID);
+                    id = operationID + "." + iterationID;
                 }
                 else
                 {
-                    record = new string(' ', recordLength);
+                    id = ("." + record.IterationID.ToString(new string('#', maxLengths.IterationID).PadRight(maxLengths.IterationID))).PadLeft(idLength);
                 }
 
-                string time = entry.Time.ToString("HH:mm:ss:fff");
-                string elapsedTime = entry.ElapsedTime.PadLeft(LogEntry.ElapsedMaxLength);
-                string name = entry.Name.PadRight(LogEntry.NameMaxLength);
-                string operation = ((entry.Operation != OperationMethod.Previous) ? entry.Operation.ToString() : "").PadRight(LogEntry.OperationMaxLength);
-                string text = (entry.Operation == OperationMethod.WriteLog) ? entry.Text.Encapsulate("[") : entry.Text;
+                string time = record.StartTime.ToString("HH:mm:ss:fff");
+                string elapsedTime = record.ElapsedTime.PadLeft(maxLengths.ElapsedTime);
+                string name = record.Name.PadRight(maxLengths.Name);
+                string operation = record.OperationString.PadRight(maxLengths.Operation);
+                string text = (record.Operation == OperationMethod.WriteLog) ? record.Text.Encapsulate(Encapsulator.Brackets) : record.Text;
 
-                string colorTag = (entry.Operation != OperationMethod.Previous) ? whiteTag : grayTag;
+                string colorTag = (record.Operation != OperationMethod.PreviousOperation) ? whiteTag : grayTag;
 
-                if (limitName == null || limitName == entry.Name)
+                if (konsole == null || konsole.Name == record.Name)
                 {
-                    string divider = WrapWithTag(" | ", @"\|", tableColor, colorTag);
-                    List<string> list;
+                    string divider = Color.InsertTag(" | ", @"\|", tableColor, colorTag);
+                    List<string> list = (konsole == null) ?
+                        new List<string>() { id, name, time, elapsedTime, operation, Color.DisableTags(text) } :
+                        new List<string>() { id, time, elapsedTime, operation, Color.DisableTags(text) };
 
-                    list = (limitName == null) ?
-                        new List<string>() { record, name, time, elapsedTime, operation, DisableTags(text) } :
-                        new List<string>() { record, time, elapsedTime, operation, DisableTags(text) };
+                    int logCountLength = Records.Count.ToString().Length;
 
-                    int logCountLength = Log.Count.ToString().Length;
-
-                    row = " " + counter.ToString(new string('#', logCountLength)).PadLeft(logCountLength);
+                    row = " " + record.ProcessID.ToString(new string('#', logCountLength)).PadLeft(logCountLength);
 
                     for (int j = 0; j < list.Count; j++)
                     {
                         row += divider + list[j];
                     }
 
-                    if (truncate && CleanTags(row).Length > Console.WindowWidth)
+                    if (truncate && Color.CleanTags(row).Length > Console.WindowWidth)
                     {
-                        int dividerLength = ((divider.Length * list.Count) - list.Count) - ((CleanTags(divider).Length * list.Count) - list.Count);
+                        int dividerLength = ((divider.Length * list.Count) - list.Count) - ((Color.CleanTags(divider).Length * list.Count) - list.Count);
                         int trimLength = Console.WindowWidth + dividerLength;
-                        int textLength = LogEntry.TextMaxLength.ToString().Length;
+                        int textLength = maxLengths.Text.ToString().Length;
                         string trimmed = row.Substring(trimLength - textLength - 3);
-                        string endMark = ("+" + (trimmed.Length - trimmed.Count(@"\n"))).PadLeft(textLength + 1, '.').Encapsulate("[");
-                        row = row.Substring(0, trimLength - endMark.Length) + InsertTag(endMark, tableColor);
+                        string endMark = ("+" + (trimmed.Length - trimmed.Count(@"\n"))).PadLeft(textLength + 1, ' ').Encapsulate(Encapsulator.Brackets);
+                        row = row.Substring(0, trimLength - endMark.Length) + Color.InsertTag(endMark, tableColor);
                     }
 
-                    row = colorTag + WrapWithTag(row, @"\\n|<\\\w+>", tableColor, colorTag);
+                    row = colorTag + Color.InsertTag(row, @"\\n|<\\\w+>", tableColor, colorTag);
 
                     log = log.AppendLine(row);
                 }
@@ -277,35 +320,24 @@
 
             Kon.WriteLine();
 
-            Paint(log);
+            Painter(log, painter);
 
-            Log.Add(new LogEntry(konsole, start, OperationMethod.WriteLog, Log.Count + ((Log.Count > 1) ? " log entries were written..." : " log entry was written...")));
+            int entries = Records.Count;
 
-            string processTime = " WriteLog process completed in {0} for {1} {2}".Format(Log.Last().ElapsedTime, counter, (counter > 1) ? "entries." : "entry.");
+            Log.Commit(entries + ((entries > 1) ? " log entries were written..." : " log entry was written..."));
+
+            string processTime = " WriteLog process completed in {0} for {1} {2}".Format(Log.Records.Last().ElapsedTime, entries, (entries > 1) ? "entries." : "entry.");
             string logEnd = "LOG END";
             string footer = darkCyanTag + thinDivider;
             footer = footer.AppendLine(darkCyanTag + processTime + new string(' ', Console.WindowWidth - logEnd.Length - processTime.Length - 1) + logEnd);
             footer = footer.AppendLine(thickDivider);
 
-            Paint(footer);
+            Painter(footer, painter);
         }
 
         public static void WriteLog(bool truncate = true)
         {
             WriteLog(null, truncate);
-        }
-
-        static void Paint(string text, bool writeline = true)
-        {
-            foreach (string s in Split(text))
-            {
-                Console.Write(Kon.Color.Paint(s));
-            }
-
-            if (writeline)
-            {
-                Console.WriteLine();
-            }
         }
 
         public class ColorSplit
@@ -370,16 +402,16 @@
                     switch (Method)
                     {
                         case SplitMethod.Line:
-                            text = PaletteLines(text, Palette).Join();
+                            text = Color.PaletteLines(text, Palette).Join();
                             break;
                         case SplitMethod.Word:
-                            text = PaletteWords(text, Palette).Join();
+                            text = Color.PaletteWords(text, Palette).Join();
                             break;
                         case SplitMethod.Chunk:
-                            text = PaletteChunks(text, Palette, ChunkSize).Join();
+                            text = Color.PaletteChunks(text, Palette, ChunkSize).Join();
                             break;
                         case SplitMethod.Char:
-                            text = PaletteChars(text, Palette).Join();
+                            text = Color.PaletteChars(text, Palette).Join();
                             break;
                     }
                 }

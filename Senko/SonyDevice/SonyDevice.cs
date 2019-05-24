@@ -12,8 +12,6 @@
 
         string AuthPSK { get; set; } = "";
 
-        Apps App;
-
         public SonyDevice()
         {
             Initialize();
@@ -31,6 +29,7 @@
         {
             Info = new Information(this, @"C:\Users\Danzen Binos\OneDrive\remo\hub.deviceinfo.json");
             Command = new Action.Command(this, @"C:\Users\Danzen Binos\OneDrive\remo\hub.ircodelist.json");
+            Apps = new Action.Apps(this, @"C:\Users\Danzen Binos\OneDrive\remo\hub.applist.json");
             Alias = new Action.Alias(this);
         }
         
@@ -38,10 +37,5 @@
         {
 
         }
-
-        class Apps
-        {
-            public Dictionary<string, Dictionary<string, string>> List { get; private set; }
-        }   
     }
 }

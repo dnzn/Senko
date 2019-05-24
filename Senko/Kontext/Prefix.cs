@@ -4,8 +4,7 @@
     using System.Text.RegularExpressions;
     using Generic;
 
-    using static Konsole.Parameters.Color;
-    using static Konsole.Parameters.NewLine;
+    using static Konsole.Parameters;
 
     public partial class Konsole
     {
@@ -17,7 +16,7 @@
             Auto
         }
 
-        public Parameters.Prefix Prefix { get; private set; }
+        public Prefix Prefix { get; private set; }
 
         public partial class Parameters
         {
@@ -90,7 +89,7 @@
 
                 public string RemovePrefix(string text)
                 {
-                    return Regex.Replace(text, @"^({0}|{1})".Format(CreateTag("prompt") + Prompt, Indent), "");
+                    return Regex.Replace(text, @"^({0}|{1})".Format(Color.CreateTag("prompt") + Prompt, Indent), "");
                 }
 
                 public string Insert(string text, PrefixType? setting = null)
@@ -106,29 +105,24 @@
                     }
 
                     text = RemovePrefix(text);
-                    text = Flush(text);
+                    text = NewLine.Flush(text);
 
                     switch (setting)
                     {
                         case PrefixType.Prompt:
-                            text = Regex.Replace(FormatText(Prompt, text, CreateTag("prompt")), @Environment.NewLine, FormatInsert(Indent, @"$&"));
+                            text = IndentNewLines(Color.CreateTag("prompt") + Prompt + "</>" + text);
                             break;
                         case PrefixType.Indent:
-                            text = Regex.Replace(FormatText(Indent, text), @Environment.NewLine, FormatInsert(Indent, @"$&"));
+                            text = IndentNewLines(Indent + "</>" + text);
                             break;
                     }
 
                     return text;
                 }
 
-                string FormatInsert(string prefix, string insert = "")
+                string IndentNewLines(string text)
                 {
-                    return FormatText(prefix, "", insert);
-                }
-
-                string FormatText(string prefix, string text, string insert = "")
-                {
-                    return insert + prefix + "</>" + text;
+                    return text.Replace(Environment.NewLine, Environment.NewLine + Indent);
                 }
             }
         }

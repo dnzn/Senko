@@ -19,6 +19,8 @@
         {
             public class NewLine
             {
+                static Regex RegexFlush { get; } = new Regex(@"[\r\n]+");
+
                 Konsole Parent { get; set; }
                 public NewLineType Former { get; set; } = NewLineType.None;
 
@@ -96,7 +98,7 @@
 
                 public static string Flush(string text)
                 {
-                    return Regex.Replace(text, @"[\r\n]+", Environment.NewLine);
+                    return RegexFlush.Replace(text, Environment.NewLine);
                 }
 
                 public static string[] Split(string text)

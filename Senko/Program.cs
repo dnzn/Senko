@@ -9,6 +9,7 @@
     using static Kontext.Konsole.Parameters;
     using static Generic.Fields;
     using static Generic.Extensions;
+    using System.Text.RegularExpressions;
 
     class Program
     {
@@ -16,13 +17,16 @@
         {
             Welcome();
 
-            SonyDevice dev = new SonyDevice("hub");
+            var dev = new SonyDevice("hub");
             dev.Alias.Add("xbox", "action");
             
-            Kon.WriteLine(dev.Info.Model);
-            Kon.WriteLine(dev.Command.Code["Hdmi1"]);
-            Kon.WriteLine("abcdefghijklmnopqrstuvwxyz<gr>012<a>3456789ABCDEFGHIJKLMNOPQRSTU\nVWXYZ");
+            Kon.WriteLine("Device Model: " + dev.Info.Model);
+            Kon.WriteLine("HDMI IRCode: " + dev.Command.Code["Hdmi1"]);
+            Kon.WriteLine("Netflix: " + dev.Apps.List["Netflix"]);
+            Kon.WriteLine("<test><tags>abcdefg\n<testagain>");
+            WriteLog();
             Kon.WriteLog();
+            WriteLog();
 
             while (true)
             {
@@ -39,14 +43,15 @@
             // Senko is also a backronym for "SENd KOmmand".
 
             string title = Color.InsertTag("PROJECT:SENKO | Remote Control", ConsoleColor.Cyan);
+
             System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();
             FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
             string version = "Version: " + fvi.ProductVersion;
-            int l = 43 - version.Length;
-            version = Color.InsertTag(version.Join("@", l, "#"), ConsoleColor.White);
+            version = Color.InsertTag(version.Join("@", 43 - version.Length, "#"), ConsoleColor.White);
+
             string github = Color.InsertTag(@"https://github.com/TsurugiDanzen/Senko", ConsoleColor.White);
 
-            string ascii = new string[]
+            var ascii = new string[]
             {
                 "@26#,.",
                 "@17#.*&&4@# .#@@@%*",

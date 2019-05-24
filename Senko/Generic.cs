@@ -13,7 +13,14 @@
     {
         public static Konsole Kon = new Konsole(nameof(Kon));
 
-        public readonly static Dictionary<string, int> Numerals = new Dictionary<string, int>
+        public enum UnitOfTime
+        {
+            Milliseconds,
+            Seconds,
+            Minutes
+        };
+
+        public static Dictionary<string, int> Numerals { get; } = new Dictionary<string, int>
         {
             { "zero", 0 },
             { "one", 1 },
@@ -42,20 +49,39 @@
             Parenthesis,
             Brackets,
             Braces,
-            Chevron
+            Chevrons
         }
 
-        public static Dictionary<char, char> Encapsulators { get; } = new Dictionary<char, char>
+        public static Dictionary<char, char> Encapsulators { get; } = new Dictionary<char, char>(); // This is automatically filled
+
+        public static Dictionary<Encapsulator, Dictionary<string, char>> EncapsulatorDictionary { get; } = new Dictionary<Encapsulator, Dictionary<string, char>>
         {
-            { '(', ')' },
-            { '[', ']' },
-            { '{', '}' },
-            { '<', '>' }
+            { Encapsulator.Parenthesis, FillEncapsulatorDictionaries('(', ')') },
+            { Encapsulator.Brackets, FillEncapsulatorDictionaries('[', ']') },
+            { Encapsulator.Braces, FillEncapsulatorDictionaries('{', '}') },
+            { Encapsulator.Chevrons, FillEncapsulatorDictionaries('<', '>') },
         };
+
+        static Dictionary<string, char> FillEncapsulatorDictionaries(char opening, char closing)
+        {
+            Encapsulators.Add(opening, closing);
+
+            return new Dictionary<string, char>
+            {
+                { "opening", opening },
+                { "closing", closing }
+            };
+        }
     }
 
     public static class Extensions
     {
+        static Regex RegexEncapsulateLiterals { get; } = new Regex(@"(\\[\\n\^\.\[\$\(\)\|\*\+\?\{\\])");
+        static Regex RegexEncapsulators { get; } = new Regex(@"[\\n\^\.\[\$\(\)\|\*\+\?\{\\]");
+        static Regex RegexMultiWhitespace { get; } = new Regex(@"\s+");
+        static Regex RegexMultiChar { get; } = new Regex(@"([\w\W])\1{3,}");
+        static Regex RegexDecompress { get; } = new Regex(@"(@(\d+)[#])|(&(\d+)([\w\W]))");
+
         public static bool Is<T>(this T obj, params T[] args)
         {
             foreach (object item in args)
@@ -78,6 +104,31 @@
             return false;
         }
 
+        public static string Format(this string text, params object[] args)
+        {
+            for (int i = 0; i < args.Length; i++)
+            {
+                text = Regex.Replace(text, i.Encapsulate(@"\{"), args[i].ToString());
+            }
+
+            return text;
+        }
+
+        public static string Translate<T>(this string text, string pattern, Dictionary<string, T> dictionary)
+        {
+            string[] words = text.Split(' ');
+
+            foreach (string word in words)
+            {
+                if (dictionary.ContainsKey(word))
+                {
+                    text = Regex.Replace(text, Format(pattern, word), dictionary[word].ToString());
+                }
+            }
+
+            return text;
+        }
+
         public static string Standardize(this string text, bool processHomophones = false)
         {
             text = text.Trim().ToLower(); // Trim whitespaces and convert string to lower case
@@ -90,7 +141,7 @@
                 text = text.Translate(pattern, Homophones);
             }
 
-            return Regex.Replace(text, @"\s+", "");
+            return RegexMultiWhitespace.Replace(text, "");
         }
 
         public static bool IsSynonym(this string s1, string s2, bool processHomophones = false)
@@ -98,19 +149,9 @@
             return s1.Standardize(processHomophones) == s2.Standardize() ? true : false;
         }
 
-        public static string Format(this string text, params object[] args)
-        {
-            for (int i = 0; i < args.Length; i++)
-            {
-                text = Regex.Replace(text, i.Encapsulate(@"(\{"), args[i].ToString());
-            }
-
-            return text;
-        }
-
         public static string Compress(this string text)
         {
-            MatchCollection matchCollection = Regex.Matches(text, @"([\w\W])\1{3,}");
+            MatchCollection matchCollection = RegexMultiChar.Matches(text);
 
             foreach(Match match in matchCollection)
             {
@@ -127,7 +168,7 @@
                     compressed = "&" + i + c;
                 }
 
-                text = Regex.Replace(text, match.Value, compressed);
+                text = text.Replace(match.Value, compressed);
             }
 
             return text;
@@ -135,9 +176,9 @@
 
         public static string Decompress(this string text)
         {
-            MatchCollection matchCollection2 = Regex.Matches(text, @"(@(\d+)[#])|(&(\d+)([\w\W]))");
+            MatchCollection matchCollection = RegexDecompress.Matches(text);
 
-            foreach(Match match in matchCollection2)
+            foreach(Match match in matchCollection)
             {
                 char c;
                 int i;
@@ -159,118 +200,93 @@
             return text;
         }
 
-        public static string Translate<T>(this string text, string pattern, Dictionary<string, T> dictionary)
-        {
-            string[] words = text.Split(' ');
-
-            foreach (string word in words)
-            {
-                if (dictionary.ContainsKey(word))
-                {
-                    text = Regex.Replace(text, Format(pattern, word), dictionary[word].ToString());
-                }
-            }
-
-            return text;
-        }
-
-        public static string Encapsulate(this object obj, Encapsulator encapsulator)
-        {
-            string opening = "";
-
-            switch (encapsulator)
-            {
-                case Encapsulator.Parenthesis:
-                    opening = "(";
-                    break;
-                case Encapsulator.Brackets:
-                    opening = "[";
-                    break;
-                case Encapsulator.Braces:
-                    opening = "{";
-                    break;
-                case Encapsulator.Chevron:
-                    opening = "<";
-                    break;
-            }
-
-            return Encapsulate(obj, opening);
-        }
-
-        public static string Encapsulate(this object obj, object opening)
+        public static string Encapsulate(this object obj, object encapsulator)
         {
             string text = obj.ToString();
-            string closing = "";
+            string openingEncapsulator;
+            string closingEncapsulator;
 
-            if (Regex.IsMatch(opening.ToString(), @"(\\[\\n\^\.\[\$\(\)\|\*\+\?\{\\])"))
+            if (encapsulator is Encapsulator encapsulatorType)
             {
-                bool checknext = false;
-
-                foreach (char c in opening.ToString())
-                {
-                    if (!checknext)
-                    {
-                        if (c == '\\')
-                        {
-                            checknext = true;
-                        }
-                        else
-                        {
-                            if (Encapsulators.ContainsKey(c))
-                            {
-                                closing = Encapsulators[c] + closing;
-                            }
-                            else
-                            {
-                                closing = c + closing;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (Regex.IsMatch(c.ToString(), @"[\\n\^\.\[\$\(\)\|\*\+\?\{\\]"))
-                        {
-                            if (Encapsulators.ContainsKey(c))
-                            {
-                                closing = @"\" + Encapsulators[c] + closing;
-                            }
-                            else
-                            {
-                                closing = @"\" + c + closing;
-                            }
-                        }
-                        else
-                        {
-                            if (Encapsulators.ContainsKey(c))
-                            {
-                                closing = Encapsulators[c] + @"\" + closing;
-                            }
-                            else
-                            {
-                                closing = c + @"\" + closing;
-                            }
-                        }
-
-                        checknext = false;
-                    }
-                }
+                Dictionary<string, char> encapsulators = EncapsulatorDictionary[encapsulatorType];
+                openingEncapsulator = encapsulators["opening"].ToString();
+                closingEncapsulator = encapsulators["closing"].ToString();
             }
             else
             {
-                foreach (char c in opening.ToString())
+                openingEncapsulator = encapsulator.ToString();
+                closingEncapsulator = "";
+
+                if (RegexEncapsulateLiterals.IsMatch(openingEncapsulator))
                 {
-                    if (Encapsulators.ContainsKey(c))
+                    bool checknext = false;
+
+                    foreach (char c in openingEncapsulator)
                     {
-                        closing = Encapsulators[c] + closing;
+                        if (!checknext)
+                        {
+                            if (c == '\\')
+                            {
+                                checknext = true;
+                            }
+                            else
+                            {
+                                if (Encapsulators.ContainsKey(c))
+                                {
+                                    closingEncapsulator = Encapsulators[c] + closingEncapsulator;
+                                }
+                                else
+                                {
+                                    closingEncapsulator = c + closingEncapsulator;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (RegexEncapsulators.IsMatch(c.ToString()))
+                            {
+                                if (Encapsulators.ContainsKey(c))
+                                {
+                                    closingEncapsulator = @"\" + Encapsulators[c] + closingEncapsulator;
+                                }
+                                else
+                                {
+                                    closingEncapsulator = @"\" + c + closingEncapsulator;
+                                }
+                            }
+                            else
+                            {
+                                if (Encapsulators.ContainsKey(c))
+                                {
+                                    closingEncapsulator = Encapsulators[c] + @"\" + closingEncapsulator;
+                                }
+                                else
+                                {
+                                    closingEncapsulator = c + @"\" + closingEncapsulator;
+                                }
+                            }
+
+                            checknext = false;
+                        }
                     }
-                    else
+                }
+                else
+                {
+                    foreach (char c in openingEncapsulator)
                     {
-                        closing = c + closing;
+                        if (Encapsulators.ContainsKey(c))
+                        {
+                            closingEncapsulator = Encapsulators[c] + closingEncapsulator;
+                        }
+                        else
+                        {
+                            closingEncapsulator = c + closingEncapsulator;
+                        }
                     }
                 }
             }
 
-            return opening + text + closing;
+            return openingEncapsulator + text + closingEncapsulator;
         }
 
         public static string Join(this object[] obj, string separator = null)
@@ -332,6 +348,16 @@
         {
             return (haystack.Length - haystack.Replace(needle, "").Length) / needle.Length; 
         }
+
+        public static bool IsEmpty<T>(this List<T> list)
+        {
+            return list.Count == 0;
+        }
+
+        public static bool IsNull<T>(this T obj)
+        {
+            return obj == null;
+        }
     }
 
     public static class Methods
@@ -344,7 +370,7 @@
         /// <returns>Returns an int within the specified range that is not equals to the original value.</returns>
         public static int Randomize(int max, int original = -1)
         {
-            Random rnd = new Random();
+            var rnd = new Random();
             int i = rnd.Next(max);
 
             if (original > -1)
@@ -356,6 +382,11 @@
             }
 
             return i;
+        }
+
+        public static string Format(string text, params object[] args)
+        {
+            return text.Format(args);
         }
 
         public static void OpenURL(string url)
@@ -392,7 +423,7 @@
 
         public static List<string> CreateOverrideArgumentList(params string[] args)
         {
-            List<List<int>> listIntList = new List<List<int>>() { new List<int>() };
+            var listIntList = new List<List<int>>() { new List<int>() };
 
             for (int i = 0; i < args.Length; i++)
             {
@@ -409,7 +440,7 @@
 
                     for (int c = 0; c < listIntList[b].Count; c++)
                     {
-                        List<int> combo = new List<int>();
+                        var combo = new List<int>();
 
                         listIntList[b].Reverse();
 
@@ -463,7 +494,7 @@
                 }
             }
 
-            List<List<int>> sortedList = new List<List<int>>();
+            var sortedList = new List<List<int>>();
 
             for (int i = 0; i < args.Length; i++)
             {
@@ -476,11 +507,11 @@
                 }
             }
 
-            List<string> stringList = new List<string>();
+            var stringList = new List<string>();
 
             foreach (List<int> l in sortedList)
             {
-                List<string> s = new List<string>();
+                var s = new List<string>();
 
                 foreach (int i in l)
                 {

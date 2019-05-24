@@ -7,6 +7,7 @@
 
     using static Generic.Extensions;
     using static Generic.Methods;
+    using static Generic.Fields;
 
     public partial class Konsole
     {
@@ -48,23 +49,21 @@
         {
             public class Color
             {
-                static Dictionary<string, string[]> Palettes { get; } = new Dictionary<string, string[]>
-            {
-                { "Rainbow", new string[] { "Red", "Yellow", "Green", "Cyan", "Magenta" } },
-                { "Light", new string[] { "White", "Gray", "Cyan", "Yellow", "Green", "Magenta", "Red" } },
-                { "Dark", new string[] { "Black", "DarkGray", "DarkCyan", "Blue", "DarkBlue", "DarkYellow", "DarkGreen", "DarkMagenta", "DarkRed" } },
-                { "LightMono", new string[] { "White", "Gray", "DarkGray" } },
-                { "DarkMono", new string[] { "Black", "DarkGray", "Gray" } },
-                { "All", Enum.GetNames(typeof(ConsoleColor))}
-            };
-
-                Konsole Parent { get; set; }
-                public ConsoleColor Primary { get; set; } = ConsoleColor.White;
-                public ConsoleColor Secondary { get; set; } = ConsoleColor.Gray;
-                public ConsoleColor Prompt { get; set; } = ConsoleColor.DarkCyan;
-                public static ConsoleColor Previous { get; private set; }
+                #region PROPERTIES
+                Konsole Parent { get; set; } // The parent console class for non-static methods
                 public bool ForceReset { get; set; } = true; // Reset the color every write when true. Previous color is inherited when false.
+                public ConsoleColor Primary { get; set; } = ConsoleColor.White; // Get or set the primary Console.ForegroundColor
+                public ConsoleColor Secondary { get; set; } = ConsoleColor.Gray; // Get or set the secondary Console.ForegroundColor
+                public ConsoleColor Prompt { get; set; } = ConsoleColor.DarkCyan; //  Get or set the default prompt Console.ForegroundColor
 
+                /// <summary>
+                /// Get the previous color.
+                /// </summary>
+                public static ConsoleColor Previous { get; private set; } // Get the previous color
+
+                /// <summary>
+                /// Get or set the current Console.ForegroundColor
+                /// </summary>
                 public static ConsoleColor Current
                 {
                     get { return Console.ForegroundColor; }
@@ -82,7 +81,7 @@
                     }
                 }
 
-                public ConsoleColor Background
+                public static ConsoleColor Background // Get or set the Console.BackgroundColor
                 {
                     get { return Console.BackgroundColor; }
                     set
@@ -93,8 +92,38 @@
                             Console.Clear();
                         }
                     }
-                }
+                } 
+                
+                static Dictionary<string, string[]> Palettes { get; } = new Dictionary<string, string[]>
+                {
+                    { "Rainbow", new string[] { "Red", "Yellow", "Green", "Cyan", "Magenta" } },
+                    { "Light", new string[] { "White", "Gray", "Cyan", "Yellow", "Green", "Magenta", "Red" } },
+                    { "Dark", new string[] { "Black", "DarkGray", "DarkCyan", "Blue", "DarkBlue", "DarkYellow", "DarkGreen", "DarkMagenta", "DarkRed" } },
+                    { "LightMono", new string[] { "White", "Gray", "DarkGray" } },
+                    { "DarkMono", new string[] { "Black", "DarkGray", "Gray" } },
+                    { "All", Enum.GetNames(typeof(ConsoleColor))}
+                };
+                #endregion
 
+                #region REGEX OBJECTS: All Regex objects used privately in this class
+                static Regex RegexTags { get; } = new Regex(@"<\w+>"); // Generic tags: <tag>
+                static Regex RegexTagAtStart { get; } = new Regex(@"^<(\w+)>"); // Generic tag at start of string
+                static Regex RegexPromptTag { get; } = new Regex(@"^<prompt>"); // Prompt tag at start of string: <prompt>
+                static Regex RegexDisabledTags { get; } = new Regex(@"<\\(\w+>)"); // Disabled tags: <\tag> 
+                static Regex RegexExtendedDisabledTags { get; } = new Regex(@"<\\(\\\w+>)"); // Extended disabled tags: <\\tag>
+                static Regex RegexCountDisabledTags { get; } = new Regex(@"<\\{1,2}\w+>"); // Disabled and extended disabled tags
+                static Regex RegexMultipleSplitterTags { get; } = new Regex(@"(</>){2,}"); // More than 1 splitter tags (</>) in succession
+                static Regex RegexZeroOrMoreWhitespaces { get; } = new Regex(@"^\s*$"); // Zero or more whitespaces from start to end of string
+                static Regex RegexOneOrMoreWhitespaces { get; } = new Regex(@" ^\s+$"); // One or more whitespaces from start to end of string
+                static Regex RegexWhitespace { get; } = new Regex(@"\s"); // Any whitespace character
+                static Regex RegexMultipleLinebreaks { get; } = new Regex(@"([\r\n]+\s*)"); // Multiple \r, \n or \r\n linebreaks
+                static Regex RegexSplitWords { get; } = new Regex(@"(\s)(\S)"); // Whitespace and non-whitespace in succession
+                #endregion
+
+                /// <summary>
+                /// The constructor method that initializes the Parent and color fields.
+                /// </summary>
+                /// <param name="parent">The parent Konsole class</param>
                 public Color(Konsole parent)
                 {
                     Parent = parent;
@@ -158,12 +187,17 @@
                 /// <returns>True if a tag is found</returns>
                 public static bool StartsWithTag(string text)
                 {
-                    return (Exists(Regex.Match(text, @"^<(\w+)>").Groups[1].Value) || Regex.Match(text, @"^<prompt>").Success) ? true : false;
+                    return (Exists(RegexTagAtStart.Match(text).Groups[1].Value) || RegexPromptTag.Match(text).Success) ? true : false;
                 }
 
+                /// <summary>
+                /// Check if text contains a known tag
+                /// </summary>
+                /// <param name="text"></param>
+                /// <returns></returns>
                 public static bool ContainsTag(string text)
                 {
-                    foreach (Match m in Regex.Matches(text, @"<\w+>"))
+                    foreach (Match m in RegexTags.Matches(text))
                     {
                         if (StartsWithTag(m.Value))
                         {
@@ -174,6 +208,10 @@
                     return false;
                 }
 
+                /// <summary>
+                /// Check if Console.BackgroundColor is dark
+                /// </summary>
+                /// <returns></returns>
                 static bool BackgroundIsDark()
                 {
                     foreach (string color in Palettes["Dark"])
@@ -218,7 +256,7 @@
                 {
                     string tag = (obj is ConsoleColor color) ? GetColor(color) : obj.ToString();
 
-                    return tag.Standardize().Encapsulate('<');
+                    return tag.Standardize().Encapsulate(Encapsulator.Chevrons);
                 }
 
                 public static string InsertTag(string text, ConsoleColor color, bool addBreakTag = true)
@@ -234,17 +272,12 @@
                     return tag + text + breakTag;
                 }
 
-                public static string InsertTag(string text, string color, bool addBreakTag = true)
-                {
-                    return InsertTag(text, GetColor(color), addBreakTag);
-                }
-
-                public static string WrapWithTag(string text, string pattern, ConsoleColor color, bool addBreakTag = true)
+                public static string InsertTag(string text, string pattern, ConsoleColor color, bool addBreakTag = true)
                 {
                     return Regex.Replace(text, pattern, InsertTag("$&", color, addBreakTag));
                 }
 
-                public static string WrapWithTag(string text, string pattern, ConsoleColor color, string append)
+                public static string InsertTag(string text, string pattern, ConsoleColor color, string append)
                 {
                     return Regex.Replace(text, pattern, InsertTag("$&" + append, color, false));
                 }
@@ -260,7 +293,7 @@
                 {
                     int i = 0;
 
-                    foreach (Match m in Regex.Matches(text, @"<\w+>"))
+                    foreach (Match m in RegexTags.Matches(text))
                     {
                         if (StartsWithTag(m.Value))
                         {
@@ -280,38 +313,26 @@
 
                 public static string CleanTags(string text, int count = 0)
                 {
-                    foreach (Match m in Regex.Matches(text, @"<\w+>"))
+                    foreach (Match m in RegexTags.Matches(text))
                     {
                         if (StartsWithTag(m.Value))
                         {
-                            text = Regex.Replace(text, m.Value, "");
+                            text = text.Replace(m.Value, "");
                         }
                     }
 
-                    foreach (Match m in Regex.Matches(text, @"<\w+>"))
-                    {
-                        if (StartsWithTag(m.Value))
-                        {
-                            string newTag = Regex.Replace(m.Value, "<", @"<\");
-
-                            text = Regex.Replace(text, m.Value, newTag);
-                        }
-                    }
-
-                    return Regex.Replace(text, @"<\\(\w+>)", "<$1");
+                    return RegexDisabledTags.Replace(text, "<$1");
                 }
 
                 public static string DisableTags(string text)
                 {
-                    text = Regex.Replace(text, @"<\\(\w+>)", @"<\\$1");
+                    text = RegexDisabledTags.Replace(text, @"<\\$1");
 
-                    foreach (Match m in Regex.Matches(text, @"<\w+>"))
+                    foreach (Match m in RegexTags.Matches(text))
                     {
                         if (StartsWithTag(m.Value))
                         {
-                            string newTag = Regex.Replace(m.Value, "<", @"<\");
-
-                            text = Regex.Replace(text, m.Value, newTag);
+                            text = text.Replace(m.Value, m.Value.Replace("<", @"<\"));
                         }
                     }
 
@@ -320,15 +341,15 @@
 
                 public static string EnableTags(string text)
                 {
-                    text = Regex.Replace(text, @"<\\(\w+>)", @"<$1");
-                    return Regex.Replace(text, @"<\\(\\\w+>)", @"<$1");
+                    text = RegexDisabledTags.Replace(text, @"<$1");
+                    return RegexExtendedDisabledTags.Replace(text, @"<$1");
                 }
 
                 public static int CountTags(string text)
                 {
                     int count = 0;
 
-                    foreach (Match m in Regex.Matches(text, @"<\w+>"))
+                    foreach (Match m in RegexTags.Matches(text))
                     {
                         if (StartsWithTag(m.Value))
                         {
@@ -342,7 +363,7 @@
                 {
                     int count = 0;
 
-                    foreach (Match m in Regex.Matches(text, @"<\\{1,2}\w+>"))
+                    foreach (Match m in RegexCountDisabledTags.Matches(text))
                     {
                         count++;
                     }
@@ -357,7 +378,7 @@
                 /// <returns>The original text sans any confirmed color tags while also cleaning up any literal tags.</returns>
                 public string Paint(string text)
                 {
-                    string colortag = Regex.Match(text, @"^<(\w+)>").Groups[1].Value; // Parse the possible color from the tag
+                    string colortag = RegexTagAtStart.Match(text).Groups[1].Value; // Parse the possible color from the tag
                     bool validColor = Exists(colortag);
 
                     if (!validColor)
@@ -389,7 +410,7 @@
 
                 public static string Paint(string text, bool validColor = false)
                 {
-                    string colortag = Regex.Match(text, @"^<(\w+)>").Groups[1].Value; // Parse the possible color from the tag
+                    string colortag = RegexTagAtStart.Match(text).Groups[1].Value; // Parse the possible color from the tag
 
                     validColor = (!validColor) ? Exists(colortag) : validColor;
 
@@ -399,7 +420,7 @@
                     }
 
                     // Remove tag if tag is a valid color and clean up any forced literal tags from <\text> to <text>
-                    return CleanTags((validColor) ? Regex.Replace(text, @"^<\w+>", "") : text);
+                    return CleanTags((validColor) ? RegexTagAtStart.Replace(text, "") : text);
                 }
 
                 /// <summary>
@@ -432,7 +453,7 @@
                             palette = Palette.All;
                         }
 
-                        string[] randomPaletteArray = new string[randomCount];
+                        var randomPaletteArray = new string[randomCount];
 
                         for (int i = 0; i < randomCount; i++)
                         {
@@ -452,7 +473,7 @@
                     {
                         bool darkBackground = BackgroundIsDark();
 
-                        palettename = Regex.Replace(palettename, "Auto", ((darkBackground) ? "Light" : "Dark"));
+                        palettename = palettename.Replace("Auto", ((darkBackground) ? "Light" : "Dark"));
 
                         return GetPalette(palettename);
                     }
@@ -462,7 +483,7 @@
                     }
                     else
                     {
-                        List<string> p = new List<string>();
+                        var p = new List<string>();
 
                         palettename = palettename.Replace("Wave", "");
 
@@ -508,7 +529,7 @@
                 static ConsoleColor[] ConvertPalette(Palette palette)
                 {
                     string[] paletteArray = GetPalette(palette);
-                    ConsoleColor[] colorArray = new ConsoleColor[paletteArray.Length];
+                    var colorArray = new ConsoleColor[paletteArray.Length];
 
                     for (int i = 0; i < paletteArray.Length; i++)
                     {
@@ -535,18 +556,17 @@
                 public static string[] PaletteInsert(string[] chunkArray, string[] paletteArray, bool randomSort = false)
                 {
                     int i = (randomSort) ? Randomize(paletteArray.Length) : 0;
-                    string color = "";
 
                     for (int j = 0; j < chunkArray.Length; j++)
                     {
-                        if (!Regex.Match(chunkArray[j], @"^\s*$").Success)
+                        if (!RegexZeroOrMoreWhitespaces.Match(chunkArray[j]).Success)
                         {
                             while (i >= paletteArray.Length && !randomSort)
                             {
                                 i -= paletteArray.Length;
                             }
 
-                            color = paletteArray[i];
+                            ConsoleColor color = GetColor(paletteArray[i]);
 
                             i = (randomSort) ? Randomize(paletteArray.Length, i) : i + 1;
 
@@ -663,7 +683,7 @@
                 public static string[] Split(string text)
                 {
                     text = ReplaceTags(text, @"</>$&");
-                    text = Regex.Replace(text, @"(</>){2,}", "</>");
+                    text = RegexMultipleSplitterTags.Replace(text, "</>");
 
                     return text.Split("</>", StringSplitOptions.RemoveEmptyEntries);
                 }
@@ -677,7 +697,7 @@
                 /// <returns>A string array.</returns>
                 public static string[] SplitChunks(string text, int chunkSize, bool countWhitespace = false)
                 {
-                    List<string> list = new List<string>();
+                    var list = new List<string>();
                     int i = 0;
 
                     while (i < text.Length)
@@ -688,14 +708,14 @@
                         {
                             if (i < text.Length)
                             {
-                                while (!countWhitespace && i < text.Length && Regex.Match(text[i].ToString(), @"\s").Success)
+                                while (!countWhitespace && i < text.Length && RegexWhitespace.Match(text[i].ToString()).Success)
                                 {
                                     chunk += text[i];
                                     i++;
                                 }
                             }
 
-                            if (Regex.Match(chunk, @"^\s+$").Success)
+                            if (RegexOneOrMoreWhitespaces.Match(chunk).Success)
                             {
                                 if (list.Count > 1)
                                 {
@@ -720,12 +740,12 @@
 
                 public static string[] SplitLines(string text)
                 {
-                    return Regex.Replace(text, @"([\r\n]+\s*)", @"$1</>").Split("</>");
+                    return RegexMultipleLinebreaks.Replace(text, @"$1</>").Split("</>");
                 }
 
                 public static string[] SplitWords(string text)
                 {
-                    return Regex.Replace(text, @"(\s)(\S)", @"$1</>$2").Split("</>");
+                    return RegexSplitWords.Replace(text, @"$1</>$2").Split("</>");
                 }
 
                 public static string[] SplitChars(string text, bool countWhitespace = false)
