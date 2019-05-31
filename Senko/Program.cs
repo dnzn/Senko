@@ -31,7 +31,7 @@
             Kon.WriteLine("The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. ");
             Kon.WriteLine("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
             
-            //WriteLog();
+            WriteLog();
 
             while (true)
             {
@@ -58,28 +58,29 @@
 
             var ascii = new string[]
             {
-                "@26#,.",
-                "@17#.*&&4@# .#@@@%*",
-                "@16##@@%,.&@&@@@//@%,",
-                "@13#.%@@(,  ,@@@&/  ,@#,",
-                "@11#,#@%/@6#,*.@4#.&@@(.@15#",
-                "@10#*@@#@17#*#@@@/.",
-                "@9#,@&(@21#,/&@@%",
-                "@8#,@%@17#,/%@@@&%/.",
-                "@7#*%@,@15#*@@@%*, ,/%&&8@}%#/.",
-                "@7#%@#@15#/&@,.*%&@@@%(*,...,,*#&@@%(",
-                "@6#,@@,@15#.(&4@%#,@15#*@@%",
-                "@5#,#@%@42#*@%,",
-                "@5#,%@%@42#,@%,",
-                "@6#,,.   ./%&&15@&%(,.@13#.%@@.  /*",
-                "@9#,%@@@%(,.@10#..*#%&@@@&%(,,,.,,*#&@@%.  ,@@,",
-                "@6#.#&@&*,@23#,(#&&7@&%*@6#&@(",
-                "@4#(@@%/@47#%@#",
-                "  *%@#*@5#{0}@14#&@(",
-                " *@@/@7#{1}*@@,",
-                ",@@&%#(,.   {2}@4#.@&(",
-                ",##%%&@@@#,@42#/&@*",
-                Color.InsertTag(new string('#', Console.WindowWidth - 1), ConsoleColor.DarkGray, false) + Environment.NewLine
+                "@27#,.",
+                "@18#.*&&4@# .#@@@%*",
+                "@17##@@%,.&@&@@@//@%,",
+                "@14#.%@@(,  ,@@@&/  ,@#,",
+                "@12#,#@%/@6#,*.@4#.&@@(.@15#",
+                "@11#*@@#@17#*#@@@/.",
+                "@10#,@&(@21#,/&@@%",
+                "@9#,@%@17#,/%@@@&%/.",
+                "@8#*%@,@15#*@@@%*, ,/%&&8@}%#/.",
+                "@8#%@#@15#/&@,.*%&@@@%(*,...,,*#&@@%(",
+                "@7#,@@,@15#.(&4@%#,@15#*@@%",
+                "@6#,#@%@42#*@%,",
+                "@6#,%@%@42#,@%,",
+                "@7#,,.   ./%&&15@&%(,.@13#.%@@.  /*",
+                "@10#,%@@@%(,.@10#..*#%&@@@&%(,,,.,,*#&@@%.  ,@@,",
+                "@7#.#&@&*,@23#,(#&&7@&%*@6#&@(",
+                "@5#(@@%/@47#%@#",
+                "   *%@#*@5#{0}@14#&@(",
+                "  *@@/@7#{1}*@@,",
+                " ,@@&%#(,.   {2}@4#.@&(",
+                " ,##%%&@@@#,@42#/&@*",
+                " " + Color.InsertTag(new string('#', Console.WindowWidth - 2), ConsoleColor.DarkGray, false),
+                Environment.NewLine
                 //@"@9#/&@@(@38#(@@*",
                 //@"@12#,%@@#.@31#.%@@*",
                 //@"@14#,/@@@/@27#/#@@#",

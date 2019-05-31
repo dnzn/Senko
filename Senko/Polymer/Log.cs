@@ -89,8 +89,7 @@
 
                 Text = text.Replace(@Environment.NewLine, @"\n");
                 EndTime = DateTime.Now;
-                Records.Add(CurrentRecord);
-                MaxLength.Parse(this);
+                Records.Add(CurrentRecord, MaxLength);
             }
 
             void SetID()
@@ -143,7 +142,7 @@
 
             public void Parse(Record record)
             {
-                Names = Math.Max(record.Name.Length, Names);
+                Names = Math.Max(record.Name.GetLength(), Names);
                 Operations = Math.Max(record.Operation.Length, Operations);
                 ProcessIDs = Math.Max(record.ProcessID.GetLength(), ProcessIDs);
                 OperationIDs = Math.Max(record.OperationID.GetLength(), OperationIDs);
@@ -239,6 +238,8 @@
                 Stream stream = new FileStream(@"C:\Users\Danzen Binos\OneDrive\Senko\test.log", FileMode.Open, FileAccess.Read);
                 Records = (List<Record>)formatter.Deserialize(stream);
                 stream.Close();
+
+                MaxLength = new MaxLengths(Records);
             }
         }
 
@@ -250,6 +251,12 @@
         public static void DeleteLogFile()
         {
 
+        }
+
+        static void Add(this List<Record> records, Record record, MaxLengths maxLengths)
+        {
+            maxLengths.Parse(record);
+            records.Add(record);
         }
     }
 }

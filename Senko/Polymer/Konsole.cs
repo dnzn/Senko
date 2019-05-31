@@ -8,6 +8,7 @@
 
     using static Generic.Fields;
     using static Kontext;
+    using static Konsole;
     using static Konsole.Parameters;
 
     public static class Kontext
@@ -23,7 +24,7 @@
                 _MainInfoKonsole = value;
 
                 MainInfoKonsole.Prefix.Prompt = " ";
-                MainInfoKonsole.Prefix.Current = Konsole.PrefixType.Indent;
+                MainInfoKonsole.Prefix.Current = PrefixType.Indent;
                 MainInfoKonsole.Color.PrimaryColor = ConsoleColor.Cyan;
                 MainInfoKonsole.Color.SecondaryColor = ConsoleColor.DarkCyan;
             }
@@ -33,9 +34,14 @@
 
         public static Regex RegexForceIndent { get; } = new Regex(Environment.NewLine + "|^");
 
-        public static void WriteLog(this Konsole konsole, bool truncate = true)
+        public static void WriteLog(this Konsole konsole, params WriteLogParameters[] parameters)
         {
-            Konsole.WriteLog(konsole, Konsole.WriteLogParameters.Truncate);
+            Konsole.WriteLog(konsole, parameters);
+        }
+
+        public static void WriteLog(this Konsole konsole)
+        {
+            WriteLog(konsole, WriteLogParameters.WriteToConsole, WriteLogParameters.WriteToFile, WriteLogParameters.Truncate);
         }
 
         public static string ForceIndent(this string text, int indentLength)
@@ -57,16 +63,16 @@
             return false;
         }
 
-        public static void Add(this List<string> list, object obj, ConsoleColor? color, Konsole.NewLineType newLineType = Konsole.NewLineType.None)
+        public static void Add(this List<string> list, object obj, ConsoleColor? color, Konsole.NewLineType newLineType = NewLineType.None)
         {
             string text = obj.InsertTag(color);
 
-            if (newLineType == Konsole.NewLineType.Append || newLineType == Konsole.NewLineType.Both)
+            if (newLineType == NewLineType.Append || newLineType == NewLineType.Both)
             {
                 text += Environment.NewLine;
             }
 
-            if (newLineType == Konsole.NewLineType.Prepend || newLineType == Konsole.NewLineType.Both)
+            if (newLineType == NewLineType.Prepend || newLineType == NewLineType.Both)
             {
                 text = Environment.NewLine + text;
             }
@@ -74,7 +80,7 @@
             list.Add(text);
         }
 
-        public static void Add(this List<string> list, object obj, Konsole.NewLineType newLineType = Konsole.NewLineType.None)
+        public static void Add(this List<string> list, object obj, Konsole.NewLineType newLineType = NewLineType.None)
         {
             list.Add(obj, null, newLineType);
         }
@@ -198,7 +204,7 @@
 
                 text = (colorSplitter.Method != SplitMethod.None) ? colorSplitter.Execute(text) : text;
 
-                text = (wordWrap == WordWrap.Enabled) ? Parameters.NewLine.WordWrap(text, prefix, Prefix.GetPrefix(prefix)) : text;
+                text = (wordWrap == WordWrap.Enabled) ? NewLine.WordWrap(text, prefix, Prefix.GetPrefix(prefix)) : text;
 
                 if (overridePrefix)
                 {
