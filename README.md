@@ -17,7 +17,9 @@ At the time of writing, the original prototype could:
 I decided to not share the original code as it is a mess (though it works). It's a working mess.
 
 ## Overview
-The Polymer namespace (foremerly known as Kontext) contains the Konsole classes, subclasses, fields and methods that manage how information is displayed in the console. It features easy console color changes using inline color tags, automatic word-wrapping, automatic prompts and indenting, and a persistent log that can be written onto a binary file. More features and methods (like Read and ReadLine) will be added as needed.
+The Polymer namespace (foremerly known as Kontext) contains the Konsole classes, subclasses, fields and methods that manage how information is displayed in the console. It features easy console color changes using inline color tags, automatic word-wrapping, automatic prompts and indenting, and a persistent log that can be written onto a binary file. Multiple instances can be initialized with different settings like default colors and prompts. More features and methods (like Read and ReadLine) will be added as needed.
+
+The Generic namespace contains static methods, extension methods, and fields. Some of them may not really be useful in the end and they will be cleared accordingly.
 
 The SonyDevice class will handle communication with and control of Sony TV and compatible devices through IP commands. At the time of writing, some of its subclasses are now functional to a point such as parsing device information, commands, apps and aliases from JSON or ALIAS files. It should be trivial to modify the code to parse live JSON from the device once the REST subclass is functional.
 
