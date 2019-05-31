@@ -3,15 +3,18 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Linq;
     using System.Runtime.InteropServices;
     using System.Text.RegularExpressions;
-    using Kontext;
+    using Polymer;
 
     using static Fields;
 
     public static class Fields
     {
         public static Konsole Kon = new Konsole(nameof(Kon));
+        public static Konsole KonInfo = new Konsole(nameof(KonInfo));
+        public static Konsole KonError = new Konsole(nameof(KonError));
 
         public enum UnitOfTime
         {
@@ -322,9 +325,9 @@
 
         public static string AppendLine(this object obj, object append)
         {
-            obj = obj ?? "";
+            string text = (!IsEmpty(obj)) ? obj.ToString() + Environment.NewLine : "";
 
-            return obj.ToString() + Environment.NewLine + append.ToString();
+            return text + append.ToString(); 
         }
 
         public static string Insert(this string text, string insert, int index)
@@ -354,9 +357,19 @@
             return list.Count == 0;
         }
 
+        public static bool IsEmpty<T>(this T obj)
+        {
+            return obj.ToString() == "";
+        }
+
         public static bool IsNull<T>(this T obj)
         {
             return obj == null;
+        }
+
+        public static int GetLength<T>(this T obj)
+        {
+            return obj.ToString().Length;
         }
     }
 

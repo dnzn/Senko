@@ -1,4 +1,4 @@
-﻿namespace Kontext
+﻿namespace Polymer
 {
     using System;
     using System.Text.RegularExpressions;
@@ -23,33 +23,39 @@
             public class Prefix
             {
                 Konsole Parent { get; set; }
-                public bool Auto { get; set; } = true;
 
-                PrefixType _current = PrefixType.Auto;
-                PrefixType _actual = PrefixType.Prompt;
-                PrefixType _previous = PrefixType.Prompt;
+                bool _auto = true;
+                public bool Auto
+                {
+                    get { return _auto; }
+                    set
+                    {
+                        if (value)
+                        {
+                            _current = PrefixType.Prompt;
+                            Parent.NewLine.Write = NewLineType.Prepend;
+                        }
+
+                        _auto = value;
+                    }
+                }
+
+                PrefixType _current = PrefixType.Prompt;
                 public PrefixType Current
                 {
                     get
                     {
-                        return (_current == PrefixType.Auto) ? _actual : _current;
+                        return _current;
                     }
                     set
                     {
                         if (value == PrefixType.Auto)
                         {
                             Auto = true;
-                            _current = PrefixType.Auto;
-                            _previous = _actual;
-                            _actual = PrefixType.Prompt;
-                            Parent.NewLine.Write = NewLineType.Prepend;
                         }
                         else
                         {
-                            Auto = false;
                             _current = value;
-                            _previous = _actual;
-                            _actual = value;
 
                             if (value != PrefixType.None)
                             {
@@ -79,7 +85,7 @@
                     }
                 }
 
-                public string Prompt { get; set; } = "KON> ";
+                public string Prompt { get; set; } = " KON> ";
                 public string Indent { get { return new string(' ', Prompt.Length); } }
 
                 public Prefix(Konsole parent)
@@ -89,7 +95,7 @@
 
                 public string RemovePrefix(string text)
                 {
-                    return Regex.Replace(text, @"^({0}|{1})".Format(Color.CreateTag("prompt") + Prompt, Indent), "");
+                    return Regex.Replace(text, @"^({0}|{1})".Format(Color.CreateTag("prompt") + Prompt, Color.CreateTag("indent") + Indent), "");
                 }
 
                 public string Insert(string text, PrefixType? setting = null)
@@ -113,7 +119,7 @@
                             text = IndentNewLines(Color.CreateTag("prompt") + Prompt + "</>" + text);
                             break;
                         case PrefixType.Indent:
-                            text = IndentNewLines(Indent + "</>" + text);
+                            text = IndentNewLines(Color.CreateTag("indent") + Indent + text);
                             break;
                     }
 
@@ -123,6 +129,21 @@
                 string IndentNewLines(string text)
                 {
                     return text.Replace(Environment.NewLine, Environment.NewLine + Indent);
+                }
+
+                public string GetPrefix(PrefixType prefixType)
+                {
+                    switch (prefixType)
+                    {
+                        case PrefixType.None:
+                            return "";
+                        case PrefixType.Prompt:
+                            return Prompt;
+                        case PrefixType.Indent:
+                            return Indent;
+                        default:
+                            goto case PrefixType.Prompt;
+                    }
                 }
             }
         }

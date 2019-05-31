@@ -7,10 +7,11 @@
     <Authors>Danzen Binos</Authors>
     <Company>Iqebana Studios</Company>
     <Description />
-    <Version>0.0.2-dev0979</Version>
+    <Version>0.0.2-dev1280</Version>
     <Deterministic>False</Deterministic>
     <PackageId>Senko</PackageId>
     <Product>Senko</Product>
+    <StartupObject></StartupObject>
   </PropertyGroup>
 
   <ItemGroup>

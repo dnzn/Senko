@@ -3,10 +3,11 @@
     using System;
     using System.Diagnostics;
     using Generic;
-    using Kontext;
+    using Polymer;
 
-    using static Kontext.Konsole;
-    using static Kontext.Konsole.Parameters;
+    using static Polymer.Konsole;
+    using static Polymer.Kontext;
+    using static Polymer.Konsole.Parameters;
     using static Generic.Fields;
     using static Generic.Extensions;
     using System.Text.RegularExpressions;
@@ -24,9 +25,13 @@
             Kon.WriteLine("HDMI IRCode: " + dev.Command.Code["Hdmi1"]);
             Kon.WriteLine("Netflix: " + dev.Apps.List["Netflix"]);
             Kon.WriteLine("<test><tags>abcdefg\n<testagain>");
-            WriteLog();
-            Kon.WriteLog();
-            WriteLog();
+            Kon.WriteLine("Write this with and Indent prefix. Let's see if it works as I expect the program to work.", PrefixType.Indent);
+
+            Kon.WriteLine("The quick brown fox jumps over the lazy dog.");
+            Kon.WriteLine("The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. ");
+            Kon.WriteLine("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+            
+            //WriteLog();
 
             while (true)
             {
@@ -83,7 +88,7 @@
                 //@"@25#.,/%%&&5&&%#*,." + Environment.NewLine
             }.Join(Environment.NewLine);
 
-            Kon.WriteLine(ascii.Decompress(), NewLineType.Both, ConsoleColor.Gray, PrefixType.None, title, version.Decompress(), github);
+            Kon.WriteLine(ascii.Decompress(), WordWrap.Disabled, NewLineType.Both, ConsoleColor.Gray, PrefixType.None, title, version.Decompress(), github);
             Kon.WriteLine();
 
             Kon.Color.Reset();

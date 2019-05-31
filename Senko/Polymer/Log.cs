@@ -1,4 +1,4 @@
-﻿namespace Kontext
+﻿namespace Polymer
 {
     using System;
     using System.Text.RegularExpressions;
@@ -9,17 +9,17 @@
     using static Konsole;
     using static Kontext;
     using static Generic.Fields;
+    using System.Runtime.Serialization;
+    using System.Runtime.Serialization.Formatters.Binary;
+    using System.IO;
 
     public static class Log
     {
-        public class Record : ICloneable
+        [Serializable()]
+        public class Record
         {
-            public Konsole Instance { get; private set; } = null;
-            public string Name { get { return (Instance != null) ? Instance.Name : ""; } }
-
-            public OperationMethod Operation { get; set; }
-            public string OperationString { get { return (Operation != OperationMethod.PreviousOperation) ? Operation.ToString() : ""; } }
-
+            public string Name { get; set; }
+            public string Operation { get; set; }
             public int ProcessID { get; private set; }
             public int OperationID { get; private set; }
             public int IterationID { get; private set; }
@@ -63,15 +63,24 @@
                     return elapsedTime;
                 }
             }
-            
+
             public string Text { get; private set; }
 
             public Record(Konsole konsole, OperationMethod operation)
-            {                
-                Instance = konsole;
-                StartTime = DateTime.Now;
+            {
+                Initialize((konsole != null) ? konsole.Name : "", operation);               
+            }
 
-                Operation = operation;
+            public Record(string name, OperationMethod operation)
+            {
+                Initialize(name, operation);
+            }
+
+            void Initialize(string name, OperationMethod operation)
+            {
+                Name = name;
+                StartTime = DateTime.Now;
+                Operation = (operation != OperationMethod.PreviousOperation) ? operation.ToString() : "";
             }
 
             public void Commit(string text)
@@ -84,12 +93,6 @@
                 MaxLength.Parse(this);
             }
 
-            public void Commit(OperationMethod operation, string text)
-            {
-                Operation = operation;
-                Commit(text);
-            }
-
             void SetID()
             {
                 int previousProcessID = (Records.IsEmpty()) ? 0 : Records.Last().ProcessID;
@@ -98,7 +101,7 @@
 
                 ProcessID = previousProcessID + 1;
 
-                if (Operation != OperationMethod.PreviousOperation)
+                if (Operation != "")
                 {
                     OperationID = previousOperationID + 1;
                     IterationID = 1;
@@ -110,22 +113,22 @@
                 }
             }
 
-            public object Clone()
+            public Record InitSubProcess(OperationMethod operation)
             {
-                return new Record(Instance, Operation);
+                return new Record(Name, operation);
             }
         }
 
         public class MaxLengths
         {
-            public int Name { get; private set; } = 0;
-            public int Operation { get; private set; } = 0;
-            public int ProcessID { get; private set; } = 0;
-            public int OperationID { get; private set; } = 0;
-            public int IterationID { get; private set; } = 0;
-            public int ElapsedTime { get; private set; } = 0;
-            public int Text { get; private set; } = 0;
-
+            public int Names { get; private set; } = 0;
+            public int Operations { get; private set; } = 0;
+            public int ProcessIDs { get; private set; } = 0;
+            public int OperationIDs { get; private set; } = 0;
+            public int IterationIDs { get; private set; } = 0;
+            public int ElapsedTimes { get; private set; } = 0;
+            public int Texts { get; private set; } = 0;
+            
             List<Record> Records { get; set; }
 
             public MaxLengths(List<Record> records)
@@ -140,13 +143,13 @@
 
             public void Parse(Record record)
             {
-                Name = Math.Max(record.Name.Length, Name);
-                Operation = Math.Max(record.OperationString.Length, Operation);
-                ProcessID = Math.Max(record.ProcessID.ToString().Length, ProcessID);
-                OperationID = Math.Max(record.OperationID.ToString().Length, OperationID);
-                IterationID = Math.Max(record.IterationID.ToString().Length, IterationID);
-                ElapsedTime = Math.Max(record.ElapsedTime.Length, ElapsedTime);
-                Text = Math.Max(record.Text.Length, Text);
+                Names = Math.Max(record.Name.Length, Names);
+                Operations = Math.Max(record.Operation.Length, Operations);
+                ProcessIDs = Math.Max(record.ProcessID.GetLength(), ProcessIDs);
+                OperationIDs = Math.Max(record.OperationID.GetLength(), OperationIDs);
+                IterationIDs = Math.Max(record.IterationID.GetLength(), IterationIDs);
+                ElapsedTimes = Math.Max(record.ElapsedTime.Length, ElapsedTimes);
+                Texts = Math.Max(Parameters.Color.CleanTags(record.Text).Length, Texts);
             }
 
             public void Refresh()
@@ -161,9 +164,9 @@
             }
         }
 
-        public static List<Record> Records { get; } = new List<Record>();
+        public static List<Record> Records { get; private set; } = new List<Record>();
+
         public static int Count { get { return Records.Count; } }
-        public static int CountOperations { get { return (Records.Count > 0) ? Records[Records.Count - 1].OperationID : 0; } }
 
         public static MaxLengths MaxLength { get; set; } = new MaxLengths(Records);
 
@@ -191,9 +194,9 @@
         {
             if (CurrentRecord != null)
             {
-                CurrentRecord = (Record)CurrentRecord.Clone();
+                CurrentRecord = CurrentRecord.InitSubProcess(method);
 
-                CurrentRecord.Commit(method, text);
+                CurrentRecord.Commit(text);
             }
         }
 
@@ -213,6 +216,40 @@
             }
 
             return records;
+        }
+
+        public static int CountOperations(List<Record> records)
+        {
+            return (records.Count > 0) ? records[records.Count - 1].OperationID : 0;
+        }
+
+        public static void SaveToFile(string filename = "")
+        {
+            IFormatter formatter = new BinaryFormatter();
+            Stream stream = new FileStream(@"C:\Users\Danzen Binos\OneDrive\Senko\test.log", FileMode.Create, FileAccess.Write);
+            formatter.Serialize(stream, Records);
+            stream.Close();
+        }
+
+        public static void LoadFromFile()
+        {
+            if (File.Exists(@"C:\Users\Danzen Binos\OneDrive\Senko\test.log"))
+            {
+                IFormatter formatter = new BinaryFormatter();
+                Stream stream = new FileStream(@"C:\Users\Danzen Binos\OneDrive\Senko\test.log", FileMode.Open, FileAccess.Read);
+                Records = (List<Record>)formatter.Deserialize(stream);
+                stream.Close();
+            }
+        }
+
+        public static void ResetLog()
+        {
+
+        }
+
+        public static void DeleteLogFile()
+        {
+
         }
     }
 }
