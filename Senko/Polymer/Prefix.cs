@@ -2,18 +2,46 @@
 {
     using System;
     using System.Text.RegularExpressions;
-    using Generic;
-
     using static Konsole.Parameters;
+
+    public static partial class Polymer
+    {
+        public static Regex RegexApplyIndentToAllLines { get; } = new Regex(Environment.NewLine + "|^", RegexOptions.Compiled);
+        public static Regex RegexApplyIndentToNewLinesOnly { get; } = new Regex(Environment.NewLine, RegexOptions.Compiled); 
+        public static Regex RegexContainsNonWhitespace { get; } = new Regex(@"[^ ]", RegexOptions.Compiled);
+
+        public static string ApplyIndent(this string text, string indent, bool applyToAllLines = true)
+        {
+            Regex regex = (applyToAllLines) ? RegexApplyIndentToAllLines : RegexApplyIndentToNewLinesOnly;
+
+            if (RegexContainsNonWhitespace.Match(text).Success)
+            {
+                return ApplyIndent(text, indent.Length, applyToAllLines);
+            }
+            else
+            {
+                return regex.Replace(text, @"$&" + indent);
+            }
+        }
+
+        public static string ApplyIndent(this string text, int indentLength, bool applyToAllLines = true)
+        {
+            Regex regex = (applyToAllLines) ? RegexApplyIndentToAllLines : RegexApplyIndentToNewLinesOnly;
+
+            var indent = new string(' ', indentLength);
+            return regex.Replace(text, @"$&" + indent);
+        }
+    }
 
     public partial class Konsole
     {
         public enum PrefixType
         {
-            None,
+            Normal,
             Prompt,
             Indent,
-            Auto
+            Auto,
+            None
         }
 
         public Prefix Prefix { get; private set; }
@@ -25,7 +53,7 @@
                 Konsole Parent { get; set; }
 
                 bool _auto = true;
-                public bool Auto
+                public bool AutoPrefix
                 {
                     get { return _auto; }
                     set
@@ -41,7 +69,7 @@
                 }
 
                 PrefixType _current = PrefixType.Prompt;
-                public PrefixType Current
+                public PrefixType CurrentPrefix
                 {
                     get
                     {
@@ -51,13 +79,13 @@
                     {
                         if (value == PrefixType.Auto)
                         {
-                            Auto = true;
+                            AutoPrefix = true;
                         }
                         else
                         {
                             _current = value;
 
-                            if (value != PrefixType.None)
+                            if (value != PrefixType.Normal)
                             {
                                 Parent.NewLine.Write = NewLineType.Prepend;
                             }
@@ -78,7 +106,7 @@
                     {
                         _override = value;
 
-                        if (!value.Is(PrefixType.Auto, PrefixType.None))
+                        if (!value.Is(PrefixType.Auto, PrefixType.Normal))
                         {
                             Parent.NewLine.OverrideWrite = NewLineType.Prepend;
                         }
@@ -87,6 +115,7 @@
 
                 public string Prompt { get; set; } = " KON> ";
                 public string Indent { get { return new string(' ', Prompt.Length); } }
+                public string Normal { get; set; } = " ";
 
                 public Prefix(Konsole parent)
                 {
@@ -95,55 +124,62 @@
 
                 public string RemovePrefix(string text)
                 {
-                    return Regex.Replace(text, @"^({0}|{1})".Format(Color.CreateTag("prompt") + Prompt, Color.CreateTag("indent") + Indent), "");
+                    return Regex.Replace(text, @"^({0}|{1})".Format(GeneratePrefix(PrefixType.Prompt), GeneratePrefix(PrefixType.Indent)), "");
                 }
 
-                public string Insert(string text, PrefixType? setting = null)
+                public string GeneratePrefix(PrefixType? prefixType, string text = null)
                 {
-                    if (setting == null)
+                    string prefix = "";
+                    
+                    if (prefixType.IsNull() || prefixType == PrefixType.Auto)
                     {
-                        setting = PrefixType.Auto;
+                        prefixType = CurrentPrefix;
                     }
 
-                    if (setting == PrefixType.Auto)
-                    {
-                        setting = Current;
-                    }
-
-                    text = RemovePrefix(text);
-                    text = NewLine.Flush(text);
-
-                    switch (setting)
-                    {
-                        case PrefixType.Prompt:
-                            text = IndentNewLines(Color.CreateTag("prompt") + Prompt + "</>" + text);
-                            break;
-                        case PrefixType.Indent:
-                            text = IndentNewLines(Color.CreateTag("indent") + Indent + text);
-                            break;
-                    }
-
-                    return text;
-                }
-
-                string IndentNewLines(string text)
-                {
-                    return text.Replace(Environment.NewLine, Environment.NewLine + Indent);
-                }
-
-                public string GetPrefix(PrefixType prefixType)
-                {
                     switch (prefixType)
                     {
-                        case PrefixType.None:
-                            return "";
                         case PrefixType.Prompt:
-                            return Prompt;
+                            prefix = Color.CreateTag("prompt");
+                            text = (text != null) ? "</>" + text.ApplyIndent(Indent, false) : "";
+                            break;
                         case PrefixType.Indent:
-                            return Indent;
-                        default:
+                            prefix = Color.CreateTag("indent");
+                            text = (text != null) ? text.ApplyIndent(Indent, false) : "";
+                            break;
+                        case PrefixType.Normal:
+                            prefix = prefix.ApplyIndent(Normal);
+                            text = (text != null) ? text.ApplyIndent(Normal) : "";
+                            break;
+                    }
+
+                    return prefix + GetPrefix(prefixType) + text;
+                }
+
+                public string Insert(string text, PrefixType? prefixType = null)
+                {
+                    return GeneratePrefix(prefixType, NewLine.Standardize(RemovePrefix(text))); ;
+                }
+
+                public string GetPrefix(PrefixType? prefixType)
+                {
+                    string prefix = "";
+
+                    switch (prefixType)
+                    {
+                        case PrefixType.Normal:
+                            prefix = Normal;
+                            break;
+                        case PrefixType.Prompt:
+                            prefix = Prompt;
+                            break;
+                        case PrefixType.Indent:
+                            prefix = Indent;
+                            break;
+                        case PrefixType.Auto:
                             goto case PrefixType.Prompt;
                     }
+
+                    return prefix;
                 }
             }
         }

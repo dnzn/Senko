@@ -2,11 +2,41 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Text.RegularExpressions;
-    using Generic;
+    using static Static;
+    using static Konsole;
+    using static Polymer;
+    using static Konsole.Parameters;
 
-    using static Kontext;
+    public static partial class Polymer
+    {
+        public static void Add(this List<string> list, object obj, ConsoleColor? color, NewLineType newLineType = NewLineType.None)
+        {
+            string text = (color != null) ? obj.InsertTag((ConsoleColor)color) : obj.ToString() ;
+
+            if (newLineType == NewLineType.Append || newLineType == NewLineType.Both)
+            {
+                text += Environment.NewLine;
+            }
+
+            if (newLineType == NewLineType.Prepend || newLineType == NewLineType.Both)
+            {
+                text = Environment.NewLine + text;
+            }
+
+            list.Add(text);
+        }
+
+        public static void Add(this List<string> list, object obj, NewLineType newLineType = NewLineType.None)
+        {
+            list.Add(obj, null, newLineType);
+        }
+               
+        public static int MaxLength(this Konsole konsole, PrefixType prefixType)
+        {
+            return NewLine.MaxLength(konsole.Prefix.GetPrefix(prefixType));
+        }
+    }
 
     public partial class Konsole
     {
@@ -18,11 +48,12 @@
             Both
         }
 
-        public enum WordWrap
+        public enum LongTextFormatting
         {
-            Enabled,
-            Disabled
-        }
+            Disabled,
+            WordWrap,
+            Truncate
+        }        
 
         public Parameters.NewLine NewLine { get; private set; }
 
@@ -30,16 +61,16 @@
         {
             public class NewLine
             {
-                static Regex RegexFlush { get; } = new Regex(@"[\r\n]+");
-                static Regex RegexWordWrap { get; } = new Regex(@"<\w+>|\S+\s*");
+                static Regex RegexFlush { get; } = new Regex(@"[\r\n]+", RegexOptions.Compiled);
+                static Regex RegexWordWrap { get; } = new Regex(@"\S+\s*", RegexOptions.Compiled);
 
                 Konsole Parent { get; set; }
                 public NewLineType Former { get; set; } = NewLineType.None;
 
-                NewLineType _Write { get; set; } = NewLineType.None;
+                NewLineType _Write = NewLineType.None;
                 public NewLineType Write
                 {
-                    get { return _Write; }
+                    get => _Write;
                     set
                     {
                         Former = Write;
@@ -49,11 +80,11 @@
 
                 public NewLineType WriteLine
                 {
-                    get { return ToWriteLine(Write); }
+                    get => ToWriteLine(Write);
                     set { Write = value; }
                 }
 
-                NewLineType _Override { get; set; } = NewLineType.None;
+                NewLineType _Override = NewLineType.None;
                 public NewLineType OverrideWrite
                 {
                     get
@@ -67,7 +98,7 @@
 
                 public NewLineType OverrideWriteLine
                 {
-                    get { return ToWriteLine(OverrideWrite); }
+                    get => ToWriteLine(OverrideWrite);
                     set { _Override = value; }
                 }
 
@@ -93,82 +124,160 @@
                 /// Insert a newline to the text as per the setting
                 /// </summary>
                 /// <param name="text">The text to modify</param>
-                /// <param name="setting">The setting the apply</param>
+                /// <param name="newLineType">The setting the apply</param>
                 /// <returns>The modified text</returns>
-                public string Insert(string text, NewLineType? setting = null)
+                public string Insert(string text, NewLineType? newLineType = null)
                 {
-                    if (setting == null)
+                    if (newLineType == null)
                     {
-                        setting = Write;
+                        newLineType = Write;
                     }
 
-                    text = ((setting == NewLineType.Prepend || setting == NewLineType.Both) && CursorLeft != 0) ? Environment.NewLine + text : text;
-                    text = (setting == NewLineType.Append || setting == NewLineType.Both) ? text + Environment.NewLine : text;
+                    text = ((newLineType == NewLineType.Prepend || newLineType == NewLineType.Both) && CursorLeft != 0) ? Environment.NewLine + text : text;
+                    text = (newLineType == NewLineType.Append || newLineType == NewLineType.Both) ? text + Environment.NewLine : text;
 
                     return text;
                 }
 
-                public static string Flush(string text)
+                public static string Standardize(string text)
                 {
                     return RegexFlush.Replace(text, Environment.NewLine);
                 }
 
                 public static string[] Split(string text)
                 {
-                    text = Flush(text);
+                    text = Standardize(text);
 
                     return text.Split(Environment.NewLine);
                 }
 
-                public static string WordWrap(string text, Konsole konsole = null)
+                public static int MaxLength(int prefixLength)
                 {
-                    konsole = konsole ?? MainKonsole;
-
-                    return WordWrap(text, konsole.Prefix.Current, konsole.Prefix.Prompt);
+                    return WindowWidth - 1 - prefixLength;
                 }
 
-                public static string WordWrap(string text, PrefixType prefixType, string prefix = "")
+                public static int MaxLength(string prefix)
                 {
-                    string final = "";
-                    int maxLength = WindowWidth - 1 - ((prefixType != PrefixType.None) ? prefix.Length : 1);
+                    return MaxLength(prefix.Length);
+                }
+
+                public static int MaxLength()
+                {
+                    return MaxLength(1);
+                }
+
+                public static string FormatLongText(string text, LongTextFormatting format, string prefix = "")
+                {
+                    switch (format)
+                    {
+                        case LongTextFormatting.WordWrap:
+                            return WordWrap(text, prefix);
+                        case LongTextFormatting.Truncate:
+                            return Truncate(text, prefix);
+                        default:
+                            return text;
+                    }
+                }
+
+                public static string Truncate(string text, string prefix = "")
+                {
+                    int idealLength = MaxLength(prefix);
+                    int maxLength = idealLength + text.Length - Color.CleanTags(text).Length;
+                    string trimmed = "";
+                    string overflow = ("+" + text.Substring(maxLength).Length).Encapsulate(EncapsulatorType.Brackets);
+                    string excess;
+
+                    while (Color.CleanTags(trimmed).Length != idealLength)
+                    {
+                        excess = text.Substring(maxLength - overflow.Length);
+                        overflow = ("+" + (excess.Length)).Encapsulate(EncapsulatorType.Brackets);
+                        trimmed = text.Substring(0, maxLength - overflow.Length) + Color.CreateTag(ConsoleColor.DarkGray) + overflow;
+
+                        if (Color.CleanTags(trimmed).Length > idealLength)
+                        {
+                            maxLength--;
+                        }
+                        else
+                        {
+                            maxLength++;
+                        }
+                    }
+
+                    return trimmed;
+                }
+
+                public static string WordWrap(string text, string prefix = "")
+                {
+                    string processed = "";
                     string temp = "";
+                    int maxLength = MaxLength(prefix);
 
                     if (text.Length > maxLength)
                     {
-                        MatchCollection matches = RegexWordWrap.Matches(text);
+                        string[] lines = Split(text);
 
-                        foreach (Match match in matches)
+                        foreach(string line in lines)
                         {
-                            if (match.Value.Length > maxLength)
+                            if (Color.CleanTags(line).Length < maxLength)
                             {
-                                for (int i = 0; i < match.Value.Length; i += maxLength)
-                                {
-                                    temp = match.Value.Substring(i, Math.Min(maxLength, match.Value.Length - i));
-                                    final = final.AppendLine(temp);
-                                    temp = "";
-                                }
-                            }
-                            else if (Color.CleanTags(temp + match.Value).Length < maxLength && !match.Value.Contains(Environment.NewLine))
-                            {
-                                temp += match.Value;
-                            }
-                            else if (match.Value.Contains(Environment.NewLine))
-                            {
-                                final += temp;
-                                temp = match.Value;
+                                processed = processed.AppendLine(line);
                             }
                             else
                             {
-                                final = final.AppendLine(temp);
-                                temp = match.Value;
+                                var elementList = new List<string>();
+
+                                if (Color.ContainsTag(line))
+                                {
+                                    foreach (string colorLine in Color.Expand(line))
+                                    {
+                                        foreach (Match match in RegexWordWrap.Matches(colorLine))
+                                        {
+                                            elementList.Add(match.Value);
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    foreach (Match match in RegexWordWrap.Matches(line))
+                                    {
+                                        elementList.Add(match.Value);
+                                    }
+                                }
+
+                                foreach (string element in elementList)
+                                {
+                                    if (Color.CleanTags(temp + element).Length < maxLength)
+                                    {
+                                        temp += element;                                        
+                                    }
+                                    else
+                                    {
+                                        if (temp.EndsWith(' ') && temp.Length > maxLength - 10)
+                                        {
+                                            processed = processed.AppendLine(temp);
+                                            temp = element;
+                                        }
+                                        else
+                                        {
+                                            temp += element;
+
+                                            while (temp.Length > maxLength)
+                                            {
+                                                int length = maxLength + temp.Length - Color.CleanTags(temp).Length;
+                                                string substring = temp.Substring(0, length);
+                                                processed = processed.AppendLine(substring);
+                                                temp = temp.Substring(length);
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
 
-                        final = final.AppendLine(temp);
+                        return processed.AppendLine(temp);
                     }
-                    else { final = text; }
-                                       
-                    return final;
+
+                    return text;
                 }
             }
         }

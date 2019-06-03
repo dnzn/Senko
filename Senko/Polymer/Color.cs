@@ -3,24 +3,27 @@
     using System;
     using System.Collections.Generic;
     using System.Text.RegularExpressions;
-    using Generic;
+    using static Static;
+    using static Extensions;
+    using static Konsole.Parameters;
+    using static Methods;
+    using static Polymer;
 
-    using static Generic.Extensions;
-    using static Generic.Methods;
-    using static Generic.Fields;
-    using static Kontext;
+    public static partial class Polymer
+    {
+        public static string AppendLine(this object obj, object append, ConsoleColor color)
+        {
+            return obj.AppendLine(append.InsertTag(color));
+        }
+
+        public static string InsertTag(this object obj, ConsoleColor color)
+        {
+            return Color.InsertTag(obj, color, false);
+        }
+    }
 
     public partial class Konsole
     {
-        public enum SplitMethod
-        {
-            None,
-            Line,
-            Word,
-            Chunk,
-            Char
-        };
-
         public enum Palette
         {
             Rainbow,
@@ -47,11 +50,11 @@
         /// <summary>
         /// The main Parameters.Color object available to the Konsole object and its subclasses
         /// </summary>
-        public Parameters.Color Color { get; private set; }
+        public Color Color { get; private set; }
 
         public partial class Parameters
         {
-            public class Color
+            public partial class Color
             {
                 #region PROPERTIES
 
@@ -136,7 +139,7 @@
                 #endregion
 
                 #region REGEX OBJECTS: All Regex objects used privately in this class
-                static Regex RegexTags { get; } = new Regex(@"<\w+>", RegexOptions.Compiled); // Generic tags: <tag>
+                public static Regex RegexTags { get; } = new Regex(@"<\w+>", RegexOptions.Compiled); // Generic tags: <tag>
                 static Regex RegexTagAtStart { get; } = new Regex(@"^<(\w+)>", RegexOptions.Compiled); // Generic tag at start of string
                 static Regex RegexDisabledTags { get; } = new Regex(@"<\\(\w+>)", RegexOptions.Compiled); // Disabled tags: <\tag> 
                 static Regex RegexExtendedDisabledTags { get; } = new Regex(@"<\\(\\\w+>)", RegexOptions.Compiled); // Extended disabled tags: <\\tag>
@@ -324,12 +327,12 @@
 
                 public static string CreateTag(object obj)
                 {
-                    return (obj != null) ? obj.ToString().ToLower().Standardize().Encapsulate(Encapsulator.Chevrons) : "";
+                    return (obj != null) ? obj.ToString().ToLower().Standardize().Encapsulate(EncapsulatorType.Chevrons) : "";
                 }
 
-                public static string InsertTag(string text, ConsoleColor color, bool addBreakTag = true)
+                public static string InsertTag(object obj, ConsoleColor color, bool addBreakTag = true)
                 {
-                    return CreateTag(color) + text + ((addBreakTag) ? "</>" : "");
+                    return obj.ToString().Encapsulate(new Encapsulator(CreateTag(color), (addBreakTag) ? "</>" : ""));
                 }
 
                 public static string InsertTag(string text, string pattern, ConsoleColor color, bool addBreakTag = true)
@@ -340,16 +343,6 @@
                 public static string InsertTag(string text, string pattern, ConsoleColor color, string append)
                 {
                     return Regex.Replace(text, pattern, InsertTag("$&" + append, color, false));
-                }
-
-                public static string InsertTag(object obj, ConsoleColor color, bool addBreakTag = true)
-                {
-                    return InsertTag(obj.ToString(), color, addBreakTag);
-                }
-
-                public static string InsertTag(object obj, ConsoleColor? color, bool addBreakTag = true)
-                {
-                    return ((color != null) ? Color.CreateTag(color) : "") + obj.ToString() + ((addBreakTag) ? "</>" : "");
                 }
 
                 /// <summary>
@@ -670,279 +663,12 @@
                     return colorArray;
                 }
 
-                /// <summary>
-                /// 
-                /// </summary>
-                /// <param name="chunkArray"></param>
-                /// <param name="palette"></param>
-                /// <param name="randomSort"></param>
-                /// <returns></returns>
-                public static string[] PaletteInsert(string[] chunkArray, Palette palette, bool randomSort = false)
-                {
-                    string[] paletteArray = GetPalette(palette, chunkArray.Length);
-
-                    return PaletteInsert(chunkArray, paletteArray, randomSort);
-                }
-
-                public static string[] PaletteInsert(string[] chunkArray, string[] paletteArray, bool randomSort = false)
-                {
-                    int i = (randomSort) ? Randomize(paletteArray.Length) : 0;
-
-                    for (int j = 0; j < chunkArray.Length; j++)
-                    {
-                        if (!RegexZeroOrMoreWhitespaces.Match(chunkArray[j]).Success)
-                        {
-                            while (i >= paletteArray.Length && !randomSort)
-                            {
-                                i -= paletteArray.Length;
-                            }
-
-                            ConsoleColor color = GetColor(paletteArray[i]);
-
-                            i = (randomSort) ? Randomize(paletteArray.Length, i) : i + 1;
-
-                            chunkArray[j] = InsertTag(chunkArray[j], color);
-                        }
-                    }
-
-                    return chunkArray;
-                }
-
-                /// <summary>
-                /// 
-                /// </summary>
-                /// <param name="text"></param>
-                /// <param name="palette"></param>
-                /// <param name="chunkSize"></param>
-                /// <param name="randomSort"></param>
-                /// <returns></returns>
-                public static string[] PaletteChunks(string text, Palette palette, int chunkSize, bool randomSort, Konsole konsole = null)
-                {
-                    text = CleanTags(text, konsole);
-
-                    return PaletteInsert(SplitChunks(text, chunkSize), palette, randomSort);
-                }
-
-                public static string[] PaletteChunks(string text, Palette palette, int chunkSize, Konsole konsole = null)
-                {
-                    return PaletteChunks(text, palette, chunkSize, false, konsole);
-                }
-
-                /// <summary>
-                /// 
-                /// </summary>
-                /// <param name="text"></param>
-                /// <param name="palette"></param>
-                /// <param name="randomSort"></param>
-                /// <returns></returns>
-                public static string[] PaletteLines(string text, Palette palette, bool randomSort, Konsole konsole = null)
-                {
-                    text = CleanTags(text, konsole);
-
-                    return PaletteInsert(SplitLines(text), palette, randomSort);
-                }
-
-                public static string[] PaletteLines(string text, Palette palette, Konsole konsole = null)
-                {
-                    return PaletteLines(text, palette, false, konsole);
-                }
-
-                /// <summary>
-                /// 
-                /// </summary>
-                /// <param name="text"></param>
-                /// <param name="palette"></param>
-                /// <param name="randomSort"></param>
-                /// <returns></returns>
-                public static string[] PaletteWords(string text, Palette palette, bool randomSort, Konsole konsole = null)
-                {
-                    text = CleanTags(text, konsole);
-
-                    return PaletteInsert(SplitWords(text), palette, randomSort);
-                }
-
-                public static string[] PaletteWords(string text, Palette palette, Konsole konsole = null)
-                {
-                    return PaletteWords(text, palette, false, konsole);
-                }
-
-                /// <summary>
-                /// 
-                /// </summary>
-                /// <param name="text"></param>
-                /// <param name="palette"></param>
-                /// <param name="randomSort"></param>
-                /// <returns></returns>
-                public static string[] PaletteChars(string text, Palette palette, bool randomSort, Konsole konsole = null)
-                {
-                    return PaletteChunks(text, palette, 1, randomSort, konsole);
-                }
-
-                public static string[] PaletteChars(string text, Palette palette, Konsole konsole = null)
-                {
-                    return PaletteChunks(text, palette, 1, false, konsole);
-                }
-
-                /// <summary>
-                /// Split the text before any confirmed color tag &lt;color&gt; or at the end tag &lt;\&gt; so that it can be processed by the Paint method.
-                /// </summary>
-                /// <param name="text">The string to split</param>
-                /// <returns>A string array containing the split text.</returns>
-                public static string[] Split(string text, Konsole konsole = null)
+                public static string[] Expand(string text, Konsole konsole = null)
                 {
                     text = ReplaceTags(text, @"</>$&", konsole);
                     text = RegexMultipleSplitterTags.Replace(text, "</>");
 
                     return text.Split("</>", StringSplitOptions.RemoveEmptyEntries);
-                }
-
-                /// <summary>
-                /// Split a string into chunks of a specific number of characters.
-                /// </summary>
-                /// <param name="text">The text to split.</param>
-                /// <param name="chunkSize">The size of the chunk.</param>
-                /// <param name="countWhitespace">If true, whitespaces will be counted as characters.</param>
-                /// <returns>A string array.</returns>
-                public static string[] SplitChunks(string text, int chunkSize, bool countWhitespace = false)
-                {
-                    var list = new List<string>();
-                    int i = 0;
-
-                    while (i < text.Length)
-                    {
-                        string chunk = "";
-
-                        for (int j = 0; j < chunkSize; j++)
-                        {
-                            if (i < text.Length)
-                            {
-                                while (!countWhitespace && i < text.Length && RegexWhitespace.Match(text[i].ToString()).Success)
-                                {
-                                    chunk += text[i];
-                                    i++;
-                                }
-                            }
-
-                            if (RegexOneOrMoreWhitespaces.Match(chunk).Success)
-                            {
-                                if (list.Count > 1)
-                                {
-                                    list[list.Count - 1] += chunk;
-                                }
-                                chunk = "";
-                            }
-
-                            if (i < text.Length)
-                            {
-                                chunk += text[i];
-                            }
-
-                            i++;
-                        }
-
-                        list.Add(chunk);
-                    }
-
-                    return list.ToArray();
-                }
-
-                public static string[] SplitLines(string text)
-                {
-                    return RegexMultipleLinebreaks.Replace(text, @"$1</>").Split("</>");
-                }
-
-                public static string[] SplitWords(string text)
-                {
-                    return RegexSplitWords.Replace(text, @"$1</>$2").Split("</>");
-                }
-
-                public static string[] SplitChars(string text, bool countWhitespace = false)
-                {
-                    return SplitChunks(text, 1, countWhitespace);
-                }
-
-                public class SplitParameters
-                {
-                    Konsole konsole { get; set; } = null;
-                    public SplitMethod Method { get; private set; }
-                    public Palette Palette { get; private set; }
-                    public int ChunkSize { get; private set; }
-
-                    public SplitParameters(SplitMethod method, Palette? palette, int chunkSize, Konsole konsole)
-                    {
-                        SetParameters(method, palette, chunkSize, konsole);
-                    }
-
-                    public SplitParameters(SplitMethod method, Palette? palette, int chunkSize = 0)
-                    {
-                        SetParameters(method, palette, chunkSize);
-                    }
-
-                    public SplitParameters(SplitMethod method, Konsole konsole = null)
-                    {
-                        SetParameters(method, null, konsole);
-                    }
-
-                    public SplitParameters(Palette palette, Konsole konsole = null)
-                    {
-                        SetParameters(SplitMethod.Char, palette, konsole);
-                    }
-
-                    public SplitParameters(int chunkSize, Konsole konsole = null)
-                    {
-                        SetParameters(SplitMethod.Chunk, null, chunkSize, konsole);
-                    }
-
-                    public SplitParameters()
-                    {
-                        SetParameters(SplitMethod.None, null);
-                    }
-
-                    void SetParameters(SplitMethod method, Palette? palette, int chunkSize, Konsole konsole = null)
-                    {
-                        if (chunkSize == 0 && method == SplitMethod.Chunk)
-                        {
-                            method = SplitMethod.Word;
-                        }
-                        else if (chunkSize > 0 && method != SplitMethod.Chunk)
-                        {
-                            method = SplitMethod.Chunk;
-                        }
-
-                        Method = method;
-
-                        if (method != SplitMethod.None)
-                        {
-                            Palette = palette ?? Palette.Auto;
-
-                            if (chunkSize > 0)
-                            {
-                                ChunkSize = chunkSize;
-                            }
-                        }
-                    }
-
-                    void SetParameters(SplitMethod method, Palette? palette, Konsole konsole = null)
-                    {
-                        SetParameters(method, palette, 0, konsole);
-                    }
-
-                    public string Execute(string text)
-                    {
-                        switch (Method)
-                        {
-                            case SplitMethod.Line:
-                                return Color.PaletteLines(text, Palette, konsole).Join();
-                            case SplitMethod.Word:
-                                return Color.PaletteWords(text, Palette, konsole).Join();
-                            case SplitMethod.Chunk:
-                                return Color.PaletteChunks(text, Palette, ChunkSize, konsole).Join();
-                            case SplitMethod.Char:
-                                return Color.PaletteChars(text, Palette, konsole).Join();                                
-                            default:
-                                return text;
-                        }
-                    }
                 }
             }
         }

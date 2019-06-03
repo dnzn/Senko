@@ -2,38 +2,16 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Text.RegularExpressions;
-    using Generic;
     using System.Linq;
-
-    using static Generic.Fields;
-    using static Kontext;
+    using System.Text.RegularExpressions;
+    using static Static;
+    using static Extensions;
     using static Konsole;
     using static Konsole.Parameters;
+    using static Polymer;
 
-    public static class Kontext
+    public static partial class Polymer
     {
-        public static Konsole MainKonsole { get; set; }
-
-        static Konsole _MainInfoKonsole;
-        public static Konsole MainInfoKonsole
-        {
-            get => _MainInfoKonsole;
-            set
-            {
-                _MainInfoKonsole = value;
-
-                MainInfoKonsole.Prefix.Prompt = " ";
-                MainInfoKonsole.Prefix.Current = PrefixType.Indent;
-                MainInfoKonsole.Color.PrimaryColor = ConsoleColor.Cyan;
-                MainInfoKonsole.Color.SecondaryColor = ConsoleColor.DarkCyan;
-            }
-        }
-        public static Konsole MainErrorKonsole { get; set; }
-        public static List<Konsole> Konsoles { get; } = new List<Konsole>();
-
-        public static Regex RegexForceIndent { get; } = new Regex(Environment.NewLine + "|^");
-
         public static void WriteLog(this Konsole konsole, params WriteLogParameters[] parameters)
         {
             Konsole.WriteLog(konsole, parameters);
@@ -42,12 +20,6 @@
         public static void WriteLog(this Konsole konsole)
         {
             WriteLog(konsole, WriteLogParameters.WriteToConsole, WriteLogParameters.WriteToFile, WriteLogParameters.Truncate);
-        }
-
-        public static string ForceIndent(this string text, int indentLength)
-        {
-            var Indent = new string(' ', indentLength);
-            return RegexForceIndent.Replace(text, @"$&" + Indent);
         }
 
         public static bool Contains(this List<Konsole> konsoles, string name)
@@ -62,42 +34,29 @@
 
             return false;
         }
-
-        public static void Add(this List<string> list, object obj, ConsoleColor? color, Konsole.NewLineType newLineType = NewLineType.None)
-        {
-            string text = obj.InsertTag(color);
-
-            if (newLineType == NewLineType.Append || newLineType == NewLineType.Both)
-            {
-                text += Environment.NewLine;
-            }
-
-            if (newLineType == NewLineType.Prepend || newLineType == NewLineType.Both)
-            {
-                text = Environment.NewLine + text;
-            }
-
-            list.Add(text);
-        }
-
-        public static void Add(this List<string> list, object obj, Konsole.NewLineType newLineType = NewLineType.None)
-        {
-            list.Add(obj, null, newLineType);
-        }
-
-        public static string AppendLine(this object obj, object append, ConsoleColor color)
-        {
-            return obj.AppendLine(append.InsertTag(color));
-        }
-
-        public static string InsertTag(this object obj, ConsoleColor? color = null)
-        {            
-            return Color.InsertTag(obj, color, false);
-        }
     }
 
     public partial class Konsole
     {
+        public static Konsole MainKonsole { get; set; }
+
+        static Konsole _MainInfoKonsole;
+        public static Konsole MainInfoKonsole
+        {
+            get => _MainInfoKonsole;
+            set
+            {
+                _MainInfoKonsole = value;
+
+                MainInfoKonsole.Prefix.Prompt = " ";
+                MainInfoKonsole.Prefix.CurrentPrefix = PrefixType.Indent;
+                MainInfoKonsole.Color.PrimaryColor = ConsoleColor.Cyan;
+                MainInfoKonsole.Color.SecondaryColor = ConsoleColor.DarkCyan;
+            }
+        }
+        public static Konsole MainErrorKonsole { get; set; }
+        public static List<Konsole> Konsoles { get; } = new List<Konsole>();
+
         public enum OperationMethod
         {
             Write,
@@ -108,12 +67,26 @@
             PreviousOperation
         };
 
+        public enum WriteParameters
+        {
+            /// <summary>
+            /// A log entry will not be created.
+            /// </summary>
+            OffTheRecord,
+            /// <summary>
+            /// Colors and other tags will not be processed. Any color, prefix, and newline arguments will be ignored.
+            /// </summary>
+            MinimalProcessing,
+            ColorSplitterRandomSort,
+            ColorSplitterCountWhiteSpaces
+        }
+
         public enum WriteLogParameters
         {
             WriteToConsole,
             WriteToFile,
             Truncate
-        }
+        };
 
         public string Name { get; private set; }
         static int CursorLeft { get => Console.CursorLeft; set => Console.CursorLeft = value; }
@@ -122,9 +95,9 @@
         public Konsole(string instanceName)
         {
             Name = instanceName;
-            Color = new Parameters.Color(this);
-            Prefix = new Parameters.Prefix(this);
-            NewLine = new Parameters.NewLine(this);
+            Color = new Color(this);
+            Prefix = new Prefix(this);
+            NewLine = new NewLine(this);
             Console.CursorVisible = false;
 
             if (Name.Contains("Error") && MainErrorKonsole == null)
@@ -148,87 +121,118 @@
             Log.LoadFromFile();
         }
 
-        void Print(string text, OperationMethod method, params object[] objectArray)
+        void Print(string text, OperationMethod method, params dynamic[] dynamicArgs)
         {
-            Log.Initialize(this, method);
+            var writeParameters = new List<WriteParameters>();
 
             if (method.ToString().Contains("Write"))
             {
                 var stringList = new List<string>();
-                var colorSplitter = new Color.SplitParameters();
-                var wordWrap = WordWrap.Enabled;
-                bool overridePrefix = false;
-
-                PrefixType prefix = Prefix.Current;
+                var colorSplitter = new Color.Splitter();
+                var longTextFormatting = LongTextFormatting.WordWrap;
+                PrefixType prefix = Prefix.CurrentPrefix;
                 NewLineType newline = (method == OperationMethod.Write) ? NewLine.Write : NewLine.WriteLine;
                 ConsoleColor color = (Color.ForceColorReset) ? Color.PrimaryColor : Color.ForegroundColor;
 
-                foreach (object obj in objectArray)
+                foreach (dynamic arg in dynamicArgs)
                 {
                     if (stringList.Count == 0)
                     {
-                        if (obj is WordWrap _wordWrap)
+                        if (arg is WriteParameters)
                         {
-                            wordWrap = _wordWrap;
+                            writeParameters.Add(arg); 
                         }
-                        else if (obj is NewLineType _newline)
+                        else if (arg is LongTextFormatting)
                         {
-                            newline = (method == OperationMethod.Write) ? NewLine.OverrideWrite = _newline : NewLine.OverrideWriteLine = _newline;
+                            longTextFormatting = arg;
                         }
-                        else if (obj is PrefixType _prefix)
+                        else if (arg is NewLineType)
                         {
-                            overridePrefix = true;
-                            prefix = Prefix.Override = _prefix;
+                            newline = (method == OperationMethod.Write) ? NewLine.OverrideWrite = arg : NewLine.OverrideWriteLine = arg;
+                        }
+                        else if (arg is PrefixType)
+                        {
+                            prefix = Prefix.Override = arg;
                             newline = (method == OperationMethod.Write) ? NewLine.OverrideWrite : NewLine.OverrideWriteLine;
                         }
-                        else if (obj is ConsoleColor _color)
+                        else if (arg is ConsoleColor)
                         {
-                            color = _color;
+                            color = arg;
                         }
-                        else if (obj is Color.SplitParameters _splitParameters)
+                        else if (arg is Color.Splitter)
                         {
-                            colorSplitter = _splitParameters;
+                            colorSplitter = arg;
                         }
                         else
                         {
-                            stringList.Add(obj.ToString());
+                            stringList.Add(arg.ToString());
                         }
                     }
                     else
                     {
-                        stringList.Add(obj.ToString());
+                        stringList.Add(arg.ToString());
                     }
+                }
+
+                if (!writeParameters.Contains(WriteParameters.OffTheRecord))
+                {
+                    Log.Initialize(this, method);
+                }
+
+                if (writeParameters.Contains(WriteParameters.MinimalProcessing))
+                {
+                    prefix = PrefixType.None;
+                    newline = NewLineType.Both;
                 }
 
                 text = (stringList.Count > 0) ? text.Format(stringList.ToArray()) : text;
 
-                text = (colorSplitter.Method != SplitMethod.None) ? colorSplitter.Execute(text) : text;
-
-                text = (wordWrap == WordWrap.Enabled) ? NewLine.WordWrap(text, prefix, Prefix.GetPrefix(prefix)) : text;
-
-                if (overridePrefix)
+                if (!writeParameters.Contains(WriteParameters.MinimalProcessing))
                 {
-                    text = Prefix.Insert(text, prefix);
+                    text = colorSplitter.Execute(text, this);
+                    text = NewLine.FormatLongText(text, longTextFormatting, Prefix.GetPrefix(prefix));
                 }
-                else
+
+                if (prefix == Prefix.CurrentPrefix)
                 {
                     if (CursorLeft == 0 || (CursorLeft > 0 && (newline == NewLineType.Prepend || newline == NewLineType.Both)))
                     {
                         text = Prefix.Insert(text);
                     }
                 }
+                else
+                {
+                    text = Prefix.Insert(text, prefix);
+                }
 
                 text = NewLine.Insert(text, newline);
 
-                Painter(text, this, color, method);
-            }
+                if (!writeParameters.Contains(WriteParameters.MinimalProcessing))
+                {
+                    Printer(text, this, color, !writeParameters.Contains(WriteParameters.OffTheRecord));
+                }
+                else
+                {
+                    Printer(text, !writeParameters.Contains(WriteParameters.OffTheRecord));
+                }
 
-            Color.Reset();
+                Color.Reset();
+            }
         }
 
-        static void Painter(string text, Konsole konsole, ConsoleColor color, OperationMethod method)
+        static void Printer(string text, bool writeToLog = true)
         {
-            string[] textArray = Color.Split(text);
+            Console.Write(text);
+
+            if (writeToLog)
+            {
+                Log.Commit(text);
+            }
+        }
+
+        static void Printer(string text, Konsole konsole, ConsoleColor color, bool writeToLog = true)
+        {
+            string[] textArray = Color.Expand(text);
 
             for (int i = 0; i < textArray.Length; i++)
             {
@@ -239,23 +243,26 @@
 
                 Console.Write(Color.Paint(textArray[i], konsole));
 
-                if (i == 0)
+                if (writeToLog)
                 {
-                    Log.Commit(textArray[i]);
-                }
-                else
-                {
-                    Log.Commit(OperationMethod.PreviousOperation, textArray[i]);
+                    if (i == 0)
+                    {
+                        Log.Commit(textArray[i]);
+                    }
+                    else
+                    {
+                        Log.Commit(OperationMethod.PreviousOperation, textArray[i]);
+                    }
                 }
             }
         }
 
-        static void Painter(string text, Konsole konsole, bool writeline = true)
+        static void Printer(string text, Konsole konsole, bool writeline = true)
         {
-            Painter(Color.Split(text), konsole, writeline);
+            Printer(Color.Expand(text), konsole, writeline);
         }
 
-        static void Painter(IEnumerable<string> stringEnumerable, Konsole konsole, bool writeline = true)
+        static void Printer(IEnumerable<string> stringEnumerable, Konsole konsole, bool writeline = true)
         {
             foreach(string text in stringEnumerable)
             {
@@ -290,47 +297,50 @@
 
         static string HorizontalDivider(char c)
         {
-            return " " + new string(c, WindowWidth - 2);
+            return " " + new string(c, NewLine.MaxLength());
         }
 
         public static void WriteLog(Konsole konsole, params WriteLogParameters[] parameters)
         {
             Console.ResetColor();
             Console.WriteLine();
-            Console.Write(" Please wait. Processing log information. This might take a while...");
             
             if (parameters.Contains(WriteLogParameters.WriteToConsole))
             {
                 Log.Initialize(konsole, OperationMethod.WriteLog);
 
-                Konsole painter;
+                Konsole printer;
                 List<Log.Record> records;
                 List<string> processedRecords = new List<string>();
                 Log.MaxLengths maxLengths;
-                
+
                 if (konsole != null)
                 {
-                    painter = konsole;
+                    printer = konsole;
                     records = Log.FilterRecords(konsole);
                     maxLengths = new Log.MaxLengths(records);
+
+                    Console.WriteLine(" Log entries for a specific instance will be displayed.\n Be aware that the process IDs (first column) will not be in sequence.");
                 }
                 else
                 {
-                    painter = MainKonsole;
+                    printer = MainKonsole;
                     records = Log.Records;
                     maxLengths = Log.MaxLength;
                 }
+
+                Console.WriteLine(" Processing log information. This might take a while. Please wait...");
 
                 ConsoleColor tableColor = ConsoleColor.DarkGray;
 
                 string thickDivider = HorizontalDivider('=');
                 string thinDivider = HorizontalDivider('-');
 
-                string headerText = " [KONSOLE LOG] : " + ((konsole != null) ? konsole.Name : "Full Record");
+                string headerText = "[KONSOLE LOG] : " + ((konsole != null) ? konsole.Name : "Full Record");
                 string logStart = "LOG START";
 
                 processedRecords.Add(thickDivider, ConsoleColor.DarkCyan, NewLineType.Append);
-                processedRecords.Add(headerText + new string(' ', WindowWidth - headerText.Length - logStart.Length - 1), ConsoleColor.Cyan);
+                processedRecords.Add(headerText.ApplyIndent(1) + new string(' ', printer.MaxLength(PrefixType.Normal) - headerText.Length - logStart.Length), ConsoleColor.Cyan);
                 processedRecords.Add(logStart, ConsoleColor.DarkCyan,NewLineType.Append);
                 processedRecords.Add(thickDivider, ConsoleColor.DarkCyan, NewLineType.Append);
 
@@ -342,25 +352,12 @@
                     string row;
 
                     string logDate = record.StartTime.ToString("dddd, MMMM d, yyyy");
-
-                    if (lastDate != logDate)
-                    {
-                        if (dateChanged > 0)
-                        {
-                            processedRecords.Add(thickDivider, ConsoleColor.DarkCyan, NewLineType.Append);
-                        }
-
-                        dateChanged++;
-
-                        processedRecords.Add(" " + dateChanged + ": " + logDate, ConsoleColor.Cyan, NewLineType.Append);
-
-                        lastDate = logDate;
-                    }
-
+                    int logCountLength = records.Count.GetLength();
+                    string processID = record.ProcessID.ToString(new string('#', logCountLength)).PadLeft(logCountLength);
                     string time = record.StartTime.ToString("HH:mm:ss:fff");
                     string elapsedTime = record.ElapsedTime.PadLeft(maxLengths.ElapsedTimes);
                     string operation = record.Operation.PadRight(maxLengths.Operations);
-                    string text = (record.Operation == OperationMethod.WriteLog.ToString()) ? record.Text.Encapsulate(Encapsulator.Brackets) : record.Text;
+                    string text = (record.Operation == OperationMethod.WriteLog.ToString()) ? record.Text.Encapsulate(EncapsulatorType.Brackets) : record.Text;
                     string colorTag = Color.CreateTag((record.Operation != OperationMethod.PreviousOperation.ToString()) ? ConsoleColor.White : ConsoleColor.Gray);
                     string divider = Color.InsertTag(" | ", @"\|", tableColor, colorTag);
                     string operationID;
@@ -370,8 +367,6 @@
 
                     if (record.Operation != "")
                     {
-                        processedRecords.Add(thinDivider, tableColor, NewLineType.Append);
-
                         operationID = record.OperationID.ToString(new string('#', maxLengths.OperationIDs)).PadLeft(maxLengths.OperationIDs);
                         iterationID = record.IterationID.ToString(new string('#', maxLengths.IterationIDs)).PadLeft(maxLengths.IterationIDs);
                         name = (record.Name != "") ? record.Name.PadRight(maxLengths.Names) : new string('-', maxLengths.Names);
@@ -383,39 +378,83 @@
                         name = new string(' ', maxLengths.Names);
                     }
 
+                    bool dateDivider = false;
+
+                    if (lastDate != logDate)
+                    {
+                        if (dateChanged > 0)
+                        {
+                            processedRecords.Add(thickDivider, ConsoleColor.DarkCyan, NewLineType.Append);
+                        }
+
+                        dateChanged++;
+                        processedRecords.Add(logDate.ApplyIndent(1), ConsoleColor.Cyan, NewLineType.Append);                        
+                        processedRecords.Add(thinDivider, ConsoleColor.DarkCyan, NewLineType.Append);
+
+                        string label;
+
+                        lastDate = logDate;
+
+                        string nameLabel = ((name.Length >= (label = "NAME").Length) ? label : "N").PadRight(name.Length);
+                        string processIDLabel = ((processID.Length >= (label = "PID").Length) ? label : "ID").PadRight(processID.Length);
+                        string timeLabel = "TIME".PadRight(time.Length);
+                        string elapsedTimeLabel = ((elapsedTime.Length >= (label = "ELAPSED").Length) ? label : "ET").PadRight(elapsedTime.Length);
+                        string operationLabel = ((operation.Length >= (label = "METHOD").Length) ? label : "M").PadRight(operation.Length);
+                        string operationIDLabel = ((operationID.Length >= (label = "OID").Length) ? label : "O").PadRight(operationID.Length);
+                        string iterationIDLabel = "#".PadRight(iterationID.Length);
+                        string textLabel = "TEXT";
+
+                        List<string> labels = (konsole == null) ?
+                            new List<string>() { processIDLabel, timeLabel, elapsedTimeLabel, operationLabel, operationIDLabel, iterationIDLabel, textLabel } :
+                            new List<string>() { timeLabel, elapsedTimeLabel, operationLabel, operationIDLabel, iterationIDLabel, textLabel };
+
+                        row = ((konsole == null) ? nameLabel : processIDLabel).ApplyIndent(1);
+
+                        for (int j = 0; j < labels.Count; j++)
+                        {
+                            row += Color.CleanTags(divider) + labels[j];
+                        }
+
+                        row = Color.CreateTag(ConsoleColor.DarkCyan) + row;
+                        processedRecords.AddRange(Color.Expand(row + Environment.NewLine));
+
+                        dateDivider = true;
+                    }
+
+                    if (record.Operation != "" && !dateDivider)
+                    {
+                        processedRecords.Add(thinDivider, tableColor, NewLineType.Append);
+                    }
+                    else if (dateDivider)
+                    {
+                        processedRecords.Add(thickDivider, ConsoleColor.DarkCyan, NewLineType.Append);
+                    }
+
                     if (konsole == null || konsole.Name == record.Name)
                     {
                         List<string> list = (konsole == null) ?
-                            new List<string>() { name, time, elapsedTime, operation, operationID, iterationID, Color.DisableTags(text, konsole) } :
+                            new List<string>() { processID, time, elapsedTime, operation, operationID, iterationID, Color.DisableTags(text, konsole) } :
                             new List<string>() { time, elapsedTime, operation, operationID, iterationID, Color.DisableTags(text, konsole) };
 
-                        int logCountLength = records.Count.GetLength();
-
-                        row = " " + record.ProcessID.ToString(new string('#', logCountLength)).PadLeft(logCountLength);
+                        row = ((konsole == null) ? name : processID).ApplyIndent(1);
 
                         for (int j = 0; j < list.Count; j++)
                         {
                             row += divider + list[j];                         
                         }
 
-                        if (parameters.Contains(WriteLogParameters.Truncate) && Color.CleanTags(row, konsole).Length > Console.WindowWidth)
+                        if (parameters.Contains(WriteLogParameters.Truncate) && Color.CleanTags(row, konsole).Length > WindowWidth)
                         {
-                            int dividerLength = ((divider.Length * list.Count) - list.Count) - ((Color.CleanTags(divider, konsole).Length * list.Count) - list.Count);
-                            int trimLength = WindowWidth + dividerLength;
-                            int textLength = maxLengths.Texts.GetLength();
-                            string trimmed = row.Substring(trimLength - textLength - 3);
-                            string endMark = ("+" + (trimmed.Length - trimmed.Count(@"\n"))).PadLeft(textLength + 1, ' ').Encapsulate(Encapsulator.Brackets);
-                            row = row.Substring(0, trimLength - endMark.Length) + endMark.InsertTag(tableColor);
+                            row = NewLine.Truncate(row);
                         }
 
                         row = colorTag + Color.InsertTag(row, @"\\n|<\\\w+>", tableColor, colorTag);
-
-                        processedRecords.AddRange(Color.Split(row + ((record != records.Last()) ? Environment.NewLine : "")));
+                        processedRecords.AddRange(Color.Expand(row + ((record != records.Last()) ? Environment.NewLine : "")));
                     }
                 }
 
                 Console.WriteLine();
-                Painter(processedRecords, painter);
+                Printer(processedRecords, printer);
 
                 int processes = records.Count;
                 int operations = Log.CountOperations(records);
@@ -430,7 +469,7 @@
                 footer = footer.AppendLine(processTime + new string(' ', WindowWidth - logEnd.Length - processTime.Length - 1) + logEnd, ConsoleColor.DarkCyan);
                 footer = footer.AppendLine(thickDivider, ConsoleColor.DarkCyan);
 
-                Painter(footer, painter);
+                Printer(footer, printer);
             }
 
             if (parameters.Contains(WriteLogParameters.WriteToFile))

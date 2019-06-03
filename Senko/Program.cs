@@ -2,15 +2,13 @@
 {
     using System;
     using System.Diagnostics;
-    using Generic;
-    using Polymer;
-
-    using static Polymer.Konsole;
-    using static Polymer.Kontext;
-    using static Polymer.Konsole.Parameters;
-    using static Generic.Fields;
-    using static Generic.Extensions;
     using System.Text.RegularExpressions;
+    using static Static;
+    using static Extensions;
+    using static Polymer.Konsole;
+    using static Polymer.Konsole.Parameters;
+    using Hue = System.Drawing.Color;
+    using Polymer;
 
     class Program
     {
@@ -24,14 +22,25 @@
             Kon.WriteLine("Device Model: " + dev.Info.Model);
             Kon.WriteLine("HDMI IRCode: " + dev.Command.Code["Hdmi1"]);
             Kon.WriteLine("Netflix: " + dev.Apps.List["Netflix"]);
-            Kon.WriteLine("<test><tags>abcdefg\n<testagain>");
+            Kon.WriteLine("<test><green><tags>abcdefg\n<testagain>", WriteParameters.MinimalProcessing);
             Kon.WriteLine("Write this with and Indent prefix. Let's see if it works as I expect the program to work.", PrefixType.Indent);
-
-            Kon.WriteLine("The quick brown fox jumps over the lazy dog.");
+            Kon.WriteLine("Test", WriteParameters.OffTheRecord);
+            Kon.WriteLine("The quick brown fox jumps over the lazy dog.\nThe quick brown fox jumps over the lazy dog.");
             Kon.WriteLine("The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. ");
-            Kon.WriteLine("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
-            
-            WriteLog();
+            Kon.WriteLine("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<green>abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz<magenta>ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbb");
+            Kon.WriteLine("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRS<green>TUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstu vwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", LongTextFormatting.Truncate);
+            Kon.WriteLine("test...");
+            Kon.WriteLine(@"https://www.bing.com/search?q=remove+string+from+index+c%23&form=EDGEAR&qs=PF&cvid=d00610ea914c4bc9b5c105a59bd118a6&cc=US&setlang=en-US&plvar=0");
+
+            var colorsplitter = new Color.Splitter(SplitMode.Word, Palette.Rainbow);
+
+            Kon.WriteLine("The quick brown fox jumps over the lazy dog in \"rainbow\" colors", colorsplitter);
+
+            Encapsulator tag = new Encapsulator("<red>", "</>");
+
+            Kon.WriteLine("This should be red.".Encapsulate(tag).Encapsulate("([{<"));
+
+            //WriteLog();
 
             while (true)
             {
@@ -58,40 +67,33 @@
 
             var ascii = new string[]
             {
-                "@27#,.",
-                "@18#.*&&4@# .#@@@%*",
-                "@17##@@%,.&@&@@@//@%,",
-                "@14#.%@@(,  ,@@@&/  ,@#,",
-                "@12#,#@%/@6#,*.@4#.&@@(.@15#",
-                "@11#*@@#@17#*#@@@/.",
-                "@10#,@&(@21#,/&@@%",
-                "@9#,@%@17#,/%@@@&%/.",
-                "@8#*%@,@15#*@@@%*, ,/%&&8@}%#/.",
-                "@8#%@#@15#/&@,.*%&@@@%(*,...,,*#&@@%(",
-                "@7#,@@,@15#.(&4@%#,@15#*@@%",
-                "@6#,#@%@42#*@%,",
-                "@6#,%@%@42#,@%,",
-                "@7#,,.   ./%&&15@&%(,.@13#.%@@.  /*",
-                "@10#,%@@@%(,.@10#..*#%&@@@&%(,,,.,,*#&@@%.  ,@@,",
-                "@7#.#&@&*,@23#,(#&&7@&%*@6#&@(",
-                "@5#(@@%/@47#%@#",
-                "   *%@#*@5#{0}@14#&@(",
-                "  *@@/@7#{1}*@@,",
-                " ,@@&%#(,.   {2}@4#.@&(",
-                " ,##%%&@@@#,@42#/&@*",
-                " " + Color.InsertTag(new string('#', Console.WindowWidth - 2), ConsoleColor.DarkGray, false),
+                "@26#,.",
+                "@17#.*&&4@# .#@@@%*",
+                "@16##@@%,.&@&@@@//@%,",
+                "@13#.%@@(,  ,@@@&/  ,@#,",
+                "@11#,#@%/@6#,*.@4#.&@@(.@15#",
+                "@10#*@@#@17#*#@@@/.",
+                "@9#,@&(@21#,/&@@%",
+                "@8#,@%@17#,/%@@@&%/.",
+                "@7#*%@,@15#*@@@%*, ,/%&&8@}%#/.",
+                "@7#%@#@15#/&@,.*%&@@@%(*,...,,*#&@@%(",
+                "@6#,@@,@15#.(&4@%#,@15#*@@%",
+                "@5#,#@%@42#*@%,",
+                "@5#,%@%@42#,@%,",
+                "@6#,,.   ./%&&15@&%(,.@13#.%@@.  /*",
+                "@9#,%@@@%(,.@10#..*#%&@@@&%(,,,.,,*#&@@%.  ,@@,",
+                "@6#.#&@&*,@23#,(#&&7@&%*@6#&@(",
+                "@4#(@@%/@47#%@#",
+                "  *%@#*@5#{0}@14#&@(",
+                " *@@/@7#{1}*@@,",
+                ",@@&%#(,.   {2}@4#.@&(",
+                ",##%%&@@@#,@42#/&@*",
+                Color.InsertTag(new string('#', Kon.MaxLength(PrefixType.Normal)), ConsoleColor.DarkGray, false),
                 Environment.NewLine
-                //@"@9#/&@@(@38#(@@*",
-                //@"@12#,%@@#.@31#.%@@*",
-                //@"@14#,/@@@/@27#/#@@#",
-                //@"@17#/%@@&(.@19#./#@@&/",
-                //@"@21#.(&&4@%#/*&4,*(#%&4@#/.",
-                //@"@25#.,/%%&&5&&%#*,." + Environment.NewLine
             }.Join(Environment.NewLine);
 
-            Kon.WriteLine(ascii.Decompress(), WordWrap.Disabled, NewLineType.Both, ConsoleColor.Gray, PrefixType.None, title, version.Decompress(), github);
+            Kon.WriteLine(ascii.Decompress(), LongTextFormatting.Disabled, NewLineType.Both, ConsoleColor.Gray, PrefixType.Normal, title, version.Decompress(), github);
             Kon.WriteLine();
-
             Kon.Color.Reset();
         }
 

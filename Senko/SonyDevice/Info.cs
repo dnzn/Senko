@@ -1,9 +1,9 @@
 ﻿namespace Senko
 {
+    using Newtonsoft.Json;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
-    using Newtonsoft.Json;
 
     public partial class SonyDevice
     {

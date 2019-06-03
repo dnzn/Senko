@@ -1,7 +1,5 @@
 ﻿namespace Senko
 {
-    using System.Collections.Generic;
-
     public partial class SonyDevice
     {
         public string ID { get; private set; } = "";

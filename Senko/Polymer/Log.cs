@@ -1,17 +1,12 @@
 ﻿namespace Polymer
 {
     using System;
-    using System.Text.RegularExpressions;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
-    using Generic;
-
-    using static Konsole;
-    using static Kontext;
-    using static Generic.Fields;
     using System.Runtime.Serialization;
     using System.Runtime.Serialization.Formatters.Binary;
-    using System.IO;
+    using static Konsole;
 
     public static class Log
     {
@@ -92,11 +87,16 @@
                 Records.Add(CurrentRecord, MaxLength);
             }
 
+            int SetID(int id)
+            {
+                return (Records.IsEmpty()) ? 0 : id;
+            }
+
             void SetID()
             {
-                int previousProcessID = (Records.IsEmpty()) ? 0 : Records.Last().ProcessID;
-                int previousOperationID = (Records.IsEmpty()) ? 0 : Records.Last().OperationID;
-                int previousIterationID = (Records.IsEmpty()) ? 0 : Records.Last().IterationID;
+                int previousProcessID = SetID(Records.Last().ProcessID);
+                int previousOperationID = SetID(Records.Last().OperationID);
+                int previousIterationID = SetID(Records.Last().IterationID);
 
                 ProcessID = previousProcessID + 1;
 
@@ -118,6 +118,7 @@
             }
         }
 
+        [Serializable()]
         public class MaxLengths
         {
             public int Names { get; private set; } = 0;
@@ -160,6 +161,19 @@
                         Parse(record);
                     }
                 }
+            }
+        }
+
+        [Serializable()]
+        struct LogFile
+        {
+            public List<Record> Records;
+            public MaxLengths MaxLength;
+
+            public LogFile(List<Record> records, MaxLengths maxLength)
+            {
+                Records = records;
+                MaxLength = maxLength;
             }
         }
 
@@ -224,9 +238,11 @@
 
         public static void SaveToFile(string filename = "")
         {
+            LogFile file = new LogFile(Records, MaxLength);
+
             IFormatter formatter = new BinaryFormatter();
             Stream stream = new FileStream(@"C:\Users\Danzen Binos\OneDrive\Senko\test.log", FileMode.Create, FileAccess.Write);
-            formatter.Serialize(stream, Records);
+            formatter.Serialize(stream, file);
             stream.Close();
         }
 
@@ -236,10 +252,11 @@
             {
                 IFormatter formatter = new BinaryFormatter();
                 Stream stream = new FileStream(@"C:\Users\Danzen Binos\OneDrive\Senko\test.log", FileMode.Open, FileAccess.Read);
-                Records = (List<Record>)formatter.Deserialize(stream);
+                LogFile file = (LogFile)formatter.Deserialize(stream);
                 stream.Close();
 
-                MaxLength = new MaxLengths(Records);
+                Records = file.Records;
+                MaxLength = file.MaxLength;
             }
         }
 
